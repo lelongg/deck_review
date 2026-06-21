@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   fetchPullRequest,
   fetchPullRequestFiles,
+  createReviewComment,
+  deleteReviewComment,
 } from '../lib/github.js'
 import { parsePatch } from '../lib/parseDiff.js'
 import { useViewed } from '../hooks/useViewed.js'
@@ -38,6 +40,45 @@ export default function ReviewDeck({ token, prRef, onExit }) {
 
   const viewedApi = useViewed(token, prRef)
   const commentsApi = useComments(prRef)
+
+  // Post a comment to GitHub immediately, then record it locally with the id
+  // GitHub assigned. Rejects on failure so the composer can show the error and
+  // keep the draft.
+  const { addComment: storeComment, removeComment: dropComment } = commentsApi
+  const headSha = meta?.headSha
+  const postComment = useCallback(
+    async (draft) => {
+      const created = await createReviewComment(token, prRef, {
+        commitId: headSha,
+        path: draft.path,
+        line: draft.line,
+        side: draft.side,
+        startLine: draft.startLine,
+        startSide: draft.startSide,
+        body: draft.body,
+      })
+      storeComment({
+        id: created.id,
+        path: draft.path,
+        side: draft.side,
+        line: draft.line,
+        startSide: draft.startSide,
+        startLine: draft.startLine,
+        body: draft.body,
+        htmlUrl: created.html_url,
+      })
+    },
+    [token, prRef, headSha, storeComment],
+  )
+
+  // Delete the comment from GitHub, then drop it locally (404 = already gone).
+  const unpostComment = useCallback(
+    async (id) => {
+      await deleteReviewComment(token, prRef, id)
+      dropComment(id)
+    },
+    [token, prRef, dropComment],
+  )
 
   // --- load PR meta + files ---------------------------------------------------
   useEffect(() => {
@@ -170,8 +211,8 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         onPrev={prev}
         viewedApi={viewedApi}
         commentsByPath={commentsApi.byPath}
-        addComment={commentsApi.addComment}
-        removeComment={commentsApi.removeComment}
+        addComment={postComment}
+        removeComment={unpostComment}
         onMarkViewed={markViewedAndAdvance}
         wrap={wrap}
       />
@@ -198,7 +239,6 @@ export default function ReviewDeck({ token, prRef, onExit }) {
           prRef={prRef}
           meta={meta}
           comments={commentsApi.comments}
-          onClearComments={commentsApi.clearComments}
           onClose={() => setFinishOpen(false)}
           onExit={onExit}
         />

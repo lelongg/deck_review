@@ -82,8 +82,46 @@ export async function fetchPullRequestFiles(token, { owner, repo, number }) {
   return out
 }
 
-// POST /repos/{owner}/{repo}/pulls/{n}/reviews — one call, all comments batched.
-// `event` is APPROVE | REQUEST_CHANGES | COMMENT.
+// POST /repos/{owner}/{repo}/pulls/{n}/comments — post ONE inline review
+// comment right away (a standalone comment, not part of a pending review).
+// Returns the created comment (we keep its `id` so it can be deleted later).
+export async function createReviewComment(
+  token,
+  { owner, repo, number },
+  { commitId, path, line, side, startLine, startSide, body },
+) {
+  if (!commitId) throw new Error('PR head commit not loaded yet.')
+  const payload = { body, commit_id: commitId, path, line, side }
+  // Multi-line range: start_line is the first line, `line` the last.
+  if (startLine != null && startLine !== line) {
+    payload.start_line = startLine
+    payload.start_side = startSide || side
+  }
+  const res = await fetch(
+    `${API}/repos/${owner}/${repo}/pulls/${number}/comments`,
+    {
+      method: 'POST',
+      headers: { ...restHeaders(token), 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+  )
+  if (!res.ok) throw await toError(res)
+  return res.json()
+}
+
+// DELETE /repos/{owner}/{repo}/pulls/comments/{id} — remove a posted comment.
+// A 404 means it's already gone, which we treat as success.
+export async function deleteReviewComment(token, { owner, repo }, commentId) {
+  const res = await fetch(
+    `${API}/repos/${owner}/${repo}/pulls/comments/${commentId}`,
+    { method: 'DELETE', headers: restHeaders(token) },
+  )
+  if (!res.ok && res.status !== 404) throw await toError(res)
+}
+
+// POST /repos/{owner}/{repo}/pulls/{n}/reviews — submit the overall verdict.
+// `event` is APPROVE | REQUEST_CHANGES | COMMENT. Inline comments are posted
+// live (see createReviewComment), so this carries only the summary + verdict.
 export async function submitReview(
   token,
   { owner, repo, number },

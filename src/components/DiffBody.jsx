@@ -124,9 +124,11 @@ export default function DiffBody({
     )
   }
 
-  function submitComposer(body) {
+  // Posts the comment to GitHub (onAddComment); resolves on success so the
+  // Composer can close, rejects so it can show the error and keep the draft.
+  async function submitComposer(body) {
     const { top, bottom } = composer
-    onAddComment({
+    await onAddComment({
       path,
       side: bottom.side,
       line: bottom.anchorLine,
@@ -208,19 +210,7 @@ export default function DiffBody({
             </div>
 
             {rowComments?.map((c) => (
-              <div key={c.id} className="note">
-                <span className="note__side">
-                  {anchorLabel(c)}
-                </span>
-                <span className="note__body">{c.body}</span>
-                <button
-                  className="note__remove"
-                  onClick={() => onRemoveComment(c.id)}
-                  aria-label="remove note"
-                >
-                  ×
-                </button>
-              </div>
+              <Note key={c.id} comment={c} onRemove={onRemoveComment} />
             ))}
 
             {composerHere && (
@@ -258,8 +248,56 @@ function composerLabel(composer) {
   )}`
 }
 
+// An inline note for a posted comment, with a remove control that deletes it
+// from GitHub. Disabled while the delete is in flight; if it fails the note
+// stays so you can retry.
+function Note({ comment, onRemove }) {
+  const [removing, setRemoving] = useState(false)
+  async function remove() {
+    if (removing) return
+    setRemoving(true)
+    try {
+      await onRemove(comment.id)
+      // success: parent drops this note and it unmounts
+    } catch {
+      setRemoving(false)
+    }
+  }
+  return (
+    <div className={`note ${removing ? 'note--busy' : ''}`}>
+      <span className="note__side">{anchorLabel(comment)}</span>
+      <span className="note__body">{comment.body}</span>
+      <button
+        className="note__remove"
+        onClick={remove}
+        disabled={removing}
+        aria-label="remove note"
+      >
+        ×
+      </button>
+    </div>
+  )
+}
+
 function Composer({ onSubmit, onCancel, label }) {
   const [text, setText] = useState('')
+  const [posting, setPosting] = useState(false)
+  const [error, setError] = useState('')
+
+  async function send() {
+    const body = text.trim()
+    if (!body || posting) return
+    setPosting(true)
+    setError('')
+    try {
+      await onSubmit(body)
+      // success: parent closes the composer and it unmounts
+    } catch (err) {
+      setError(err.message || 'Failed to post comment.')
+      setPosting(false)
+    }
+  }
+
   return (
     <div className="composer">
       <div className="composer__head">
@@ -270,25 +308,29 @@ function Composer({ onSubmit, onCancel, label }) {
         className="composer__input"
         autoFocus
         rows={3}
+        disabled={posting}
         placeholder="leave a note…"
         value={text}
         onChange={(e) => setText(e.target.value)}
         onKeyDown={(e) => {
-          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && text.trim()) {
-            onSubmit(text.trim())
-          }
+          if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') send()
         }}
       />
+      {error && <p className="composer__error">{error}</p>}
       <div className="composer__actions">
-        <button className="btn btn--ghost" onClick={onCancel}>
+        <button
+          className="btn btn--ghost"
+          onClick={onCancel}
+          disabled={posting}
+        >
           cancel
         </button>
         <button
           className="btn btn--primary"
-          disabled={!text.trim()}
-          onClick={() => text.trim() && onSubmit(text.trim())}
+          disabled={!text.trim() || posting}
+          onClick={send}
         >
-          add note
+          {posting ? 'posting…' : 'add note'}
         </button>
       </div>
     </div>

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { getJSON, setJSON } from '../lib/storage.js'
-import { commentKey } from '../lib/parseDiff.js'
 
 const keyFor = (ref) => `deck:comments:${ref.owner}/${ref.repo}#${ref.number}`
 
-// Queue of pending review comments for one PR, persisted as a draft so notes
-// survive a reload before the review is submitted. Each comment:
-//   { id, path, side, line, body }
+// Local record of the review comments posted for one PR, persisted so they
+// stay visible on each card across reloads. Comments are posted to GitHub the
+// moment they're created (see ReviewDeck), so each entry already carries the
+// real GitHub comment `id` (used to delete it) plus { path, side, line, body }.
 export function useComments(ref) {
   const storageKey = keyFor(ref)
   const [comments, setComments] = useState(() => getJSON(storageKey, []))
@@ -15,25 +15,10 @@ export function useComments(ref) {
     setJSON(storageKey, comments)
   }, [storageKey, comments])
 
-  const addComment = useCallback(
-    ({ path, side, line, body, startSide, startLine }) => {
-      setComments((prev) => [
-        ...prev,
-        {
-          id: `${commentKey(path, side, line)}::${Date.now()}`,
-          path,
-          side,
-          line,
-          // Multi-line range anchor (optional). Present only when the user
-          // selected more than one line.
-          startSide: startLine != null ? startSide : undefined,
-          startLine: startLine != null ? startLine : undefined,
-          body,
-        },
-      ])
-    },
-    [],
-  )
+  // Append an already-posted comment (id assigned by GitHub).
+  const addComment = useCallback((comment) => {
+    setComments((prev) => [...prev, comment])
+  }, [])
 
   const removeComment = useCallback((id) => {
     setComments((prev) => prev.filter((c) => c.id !== id))

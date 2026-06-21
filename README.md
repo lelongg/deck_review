@@ -30,9 +30,10 @@ accent (`#f2a900`), muted diff colors (`#7fd28c` / `#f08a8a`), mostly-monospace.
 2. `npm install && npm run dev` (add `-- --host` to reach it from your phone on
    the same LAN).
 3. Paste the token + a PR URL (`github.com/owner/repo/pull/123`).
-4. Swipe (or arrow-key) through the cards, tap a changed line to queue a note,
-   "mark viewed" to clear a card, then **finish** → Approve / Request changes /
-   Comment, which submits one batched review with all your notes.
+4. Swipe (or arrow-key) through the cards, tap a changed line to leave a note —
+   each note is **posted to the PR immediately** (removing it deletes it from
+   GitHub). "mark viewed" clears a card, then **finish** → Approve / Request
+   changes / Comment submits the overall verdict + summary.
 
 The token is sent only to `api.github.com`. "Remember token" stores it in plain
 `localStorage` — only enable it on a device you trust.
@@ -43,8 +44,9 @@ The token is sent only to `api.github.com`. "Remember token" stores it in plain
   no dependency. Tracks old/new line numbers per row so comments anchor exactly:
   additions + context → `side: RIGHT` (new line), deletions → `side: LEFT`
   (old line).
-- **API** (`src/lib/github.js`): paginates `pulls/{n}/files`, batches all
-  comments into a single `POST .../reviews`, and syncs viewed-state over
+- **API** (`src/lib/github.js`): paginates `pulls/{n}/files`, posts each note
+  immediately via `POST .../pulls/{n}/comments` (and `DELETE` to remove one),
+  submits the final verdict via `POST .../reviews`, and syncs viewed-state over
   GraphQL (`markFileAsViewed` / `unmarkFileAsViewed`).
 - **Storage** (`src/lib/storage.js`): every `localStorage` access is wrapped in
   try/catch with an in-memory fallback, so it never crashes in a sandboxed

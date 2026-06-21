@@ -11,13 +11,14 @@ const EVENTS = [
   },
 ]
 
-// Finish sheet: optional summary + verdict -> one batched review POST.
+// Finish sheet: submit the overall verdict + summary. Inline comments were
+// already posted live as they were written, so this review carries no
+// comments — just the Approve / Request changes / Comment verdict.
 export default function FinishSheet({
   token,
   prRef,
   meta,
   comments,
-  onClearComments,
   onClose,
   onExit,
 }) {
@@ -34,9 +35,7 @@ export default function FinishSheet({
         commitId: meta?.headSha,
         event,
         body: summary.trim(),
-        comments,
       })
-      onClearComments()
       setPhase('done')
     } catch (err) {
       setError(err.message || 'Failed to submit review.')
@@ -44,10 +43,9 @@ export default function FinishSheet({
     }
   }
 
-  // APPROVE / REQUEST_CHANGES with an empty summary is fine; COMMENT with no
-  // body and no comments is rejected by the API, so guard it.
-  const canSubmit =
-    !(event === 'COMMENT' && comments.length === 0 && !summary.trim())
+  // APPROVE / REQUEST_CHANGES with an empty summary is fine. A COMMENT verdict
+  // carries no inline comments here, so it needs a summary or the API rejects.
+  const canSubmit = !(event === 'COMMENT' && !summary.trim())
 
   return (
     <div className="sheet sheet--bottom" onClick={onClose}>
@@ -80,7 +78,12 @@ export default function FinishSheet({
             </header>
 
             <p className="finish__count">
-              {comments.length} queued note{comments.length === 1 ? '' : 's'}
+              {comments.length} comment{comments.length === 1 ? '' : 's'} posted
+              this session
+              <span className="finish__sub">
+                {' '}
+                · already on the PR — choose a verdict to finish
+              </span>
             </p>
 
             <textarea
@@ -119,7 +122,7 @@ export default function FinishSheet({
             </button>
             {!canSubmit && (
               <p className="finish__guard">
-                add a note or a summary before commenting.
+                add a summary, or pick approve / request changes.
               </p>
             )}
           </>

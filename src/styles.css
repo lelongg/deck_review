@@ -94,7 +94,8 @@ em {
   border-color: var(--amber);
   font-weight: 700;
 }
-.btn--primary:disabled {
+.btn:disabled,
+.note__remove:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -654,6 +655,11 @@ em {
   outline: none;
   border-color: var(--amber);
 }
+.composer__error {
+  color: var(--del);
+  font-size: 11px;
+  margin: 6px 0 0;
+}
 .composer__actions {
   display: flex;
   justify-content: flex-end;
@@ -663,6 +669,11 @@ em {
 .composer__actions .btn {
   padding: 7px 12px;
   font-size: 11px;
+}
+/* a comment whose delete is in flight */
+.note--busy {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .dots {
@@ -835,6 +846,9 @@ em {
   color: var(--amber);
   font-size: 11px;
   margin: 10px 0 8px;
+}
+.finish__sub {
+  color: var(--ink-faint);
 }
 .finish__summary {
   width: 100%;
