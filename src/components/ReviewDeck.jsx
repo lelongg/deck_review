@@ -380,9 +380,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
 
       {updateAvailable && (
         <button className="updatebar" onClick={reload} disabled={reloading}>
-          {reloading
-            ? 'refreshing…'
-            : 'this PR has new changes — tap to refresh'}
+          {reloading ? 'refreshing…' : '↻ PR updated — refresh'}
         </button>
       )}
 
@@ -412,8 +410,6 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         wrap={wrap}
         view={view}
       />
-
-      <PositionDots total={total} active={active} />
 
       {fileListOpen && (
         <FileList
@@ -602,12 +598,3 @@ function CardStack({
   )
 }
 
-function PositionDots({ total, active }) {
-  return (
-    <div className="dots" aria-hidden>
-      <span className="dots__label">
-        {total === 0 ? 0 : active + 1} / {total}
-      </span>
-    </div>
-  )
-}
