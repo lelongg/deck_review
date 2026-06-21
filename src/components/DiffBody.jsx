@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { commentKey } from '../lib/parseDiff.js'
+import { languageForPath, useGrammar, highlightLine } from '../lib/highlight.js'
 
 // Renders the parsed diff rows for a file, with inline comment composing.
 //
@@ -16,6 +17,23 @@ export default function DiffBody({
   onRemoveComment,
   wrap = true,
 }) {
+  // Syntax highlighting: load this file's grammar (lazily, from CDN) and
+  // pre-highlight every code row once it's ready. Keyed by row id so it only
+  // recomputes when the rows or the grammar change — not on every composer or
+  // selection update.
+  const grammar = useGrammar(languageForPath(path))
+  const highlighted = useMemo(() => {
+    if (!grammar) return null
+    const map = new Map()
+    for (const row of rows) {
+      if (row.type === 'add' || row.type === 'del' || row.type === 'context') {
+        const html = highlightLine(grammar, row.content)
+        if (html != null) map.set(row.id, html)
+      }
+    }
+    return map
+  }, [grammar, rows])
+
   // composer: null | { kind:'single'|'range', anchorIdx, top, bottom }
   const [composer, setComposer] = useState(null)
   // live drag selection over row indices: null | { lo, hi }
@@ -120,7 +138,11 @@ export default function DiffBody({
   }
 
   return (
-    <div className={`diff ${wrap ? '' : 'diff--nowrap'}`}>
+    <div
+      className={`diff ${wrap ? '' : 'diff--nowrap'} ${
+        highlighted ? 'diff--hl' : ''
+      }`}
+    >
       {rows.map((row, idx) => {
         if (row.type === 'hunk') {
           return (
@@ -179,9 +201,10 @@ export default function DiffBody({
               <span
                 className="diff__code"
                 onClick={commentable ? () => openSingle(idx) : undefined}
-              >
-                {row.content || ' '}
-              </span>
+                {...(highlighted?.has(row.id)
+                  ? { dangerouslySetInnerHTML: { __html: highlighted.get(row.id) } }
+                  : { children: row.content || ' ' })}
+              />
             </div>
 
             {rowComments?.map((c) => (

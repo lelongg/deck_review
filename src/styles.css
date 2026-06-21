@@ -577,6 +577,15 @@ em {
   overflow-wrap: normal;
 }
 
+/* Syntax highlighting (arborium): when active, token colors carry meaning, so
+   don't paint the whole add/del line green/red — keep the colored +/- sign and
+   the row background tint as the change cue. Untagged text falls back to normal
+   ink; <a-*> token elements set their own color (see arborium-tokens.css). */
+.diff--hl .diff__row--add .diff__code,
+.diff--hl .diff__row--del .diff__code {
+  color: var(--ink);
+}
+
 /* inline notes + composer */
 .note {
   display: flex;

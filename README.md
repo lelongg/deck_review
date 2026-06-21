@@ -72,4 +72,8 @@ nix develop        # drops you in with node 22 + npm
 - [x] PWA — installable + offline app shell via `vite-plugin-pwa` ("Add to Home
       Screen" launches standalone)
 - [x] Line-range comments — drag the line-number gutter to select a span
+- [x] Syntax highlighting — per-row tree-sitter coloring via [arborium]; grammars
+      are fetched on demand from the jsDelivr CDN (so highlighting needs network)
 - [ ] OAuth device flow instead of a pasted PAT
+
+[arborium]: https://github.com/bearcove/arborium
