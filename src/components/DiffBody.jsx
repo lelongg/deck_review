@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { commentKey } from '../lib/parseDiff.js'
-import { languageForPath, useGrammar, highlightLine } from '../lib/highlight.js'
+import { languageForPath, useGrammar, useHighlightedRows } from '../lib/highlight.js'
 
 // Renders the parsed diff rows for a file, with inline comment composing.
 //
@@ -18,21 +18,9 @@ export default function DiffBody({
   wrap = true,
 }) {
   // Syntax highlighting: load this file's grammar (lazily, from CDN) and
-  // pre-highlight every code row once it's ready. Keyed by row id so it only
-  // recomputes when the rows or the grammar change — not on every composer or
-  // selection update.
+  // highlight every code row once it's ready (async — see useHighlightedRows).
   const grammar = useGrammar(languageForPath(path))
-  const highlighted = useMemo(() => {
-    if (!grammar) return null
-    const map = new Map()
-    for (const row of rows) {
-      if (row.type === 'add' || row.type === 'del' || row.type === 'context') {
-        const html = highlightLine(grammar, row.content)
-        if (html != null) map.set(row.id, html)
-      }
-    }
-    return map
-  }, [grammar, rows])
+  const highlighted = useHighlightedRows(grammar, rows)
 
   // composer: null | { kind:'single'|'range', anchorIdx, top, bottom }
   const [composer, setComposer] = useState(null)

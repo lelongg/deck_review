@@ -92,15 +92,44 @@ export function useGrammar(language) {
   return grammar
 }
 
-// Highlight a single line to HTML. Returns null (caller renders plain text) on
-// empty input, an async grammar, or any failure — highlighting must never
-// break the diff.
-export function highlightLine(grammar, text) {
-  if (!grammar || !text) return null
-  try {
-    const html = grammar.highlight(text)
-    return typeof html === 'string' ? html : null
-  } catch {
-    return null
-  }
+// Highlight every code row for a file once its grammar is ready, returning a
+// Map<rowId, html>. `grammar.highlight()` is async (it lazy-loads the parser
+// host from the CDN), so we await it; rows are highlighted in parallel and any
+// per-row failure is skipped. Returns null until results are available, so the
+// caller renders plain text in the meantime.
+export function useHighlightedRows(grammar, rows) {
+  const [map, setMap] = useState(null)
+
+  useEffect(() => {
+    if (!grammar) {
+      setMap(null)
+      return
+    }
+    let alive = true
+    const codeRows = rows.filter(
+      (r) =>
+        (r.type === 'add' || r.type === 'del' || r.type === 'context') &&
+        r.content,
+    )
+    Promise.all(
+      codeRows.map(async (r) => {
+        try {
+          const html = await grammar.highlight(r.content)
+          return [r.id, typeof html === 'string' ? html : null]
+        } catch {
+          return [r.id, null]
+        }
+      }),
+    ).then((entries) => {
+      if (!alive) return
+      const result = new Map()
+      for (const [id, html] of entries) if (html != null) result.set(id, html)
+      setMap(result.size ? result : null)
+    })
+    return () => {
+      alive = false
+    }
+  }, [grammar, rows])
+
+  return map
 }
