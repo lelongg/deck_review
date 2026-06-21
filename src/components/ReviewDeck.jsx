@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   fetchPullRequest,
   fetchPullRequestFiles,
+  fetchPullRequestDiff,
   createReviewComment,
   deleteReviewComment,
 } from '../lib/github.js'
-import { parsePatch } from '../lib/parseDiff.js'
+import { parsePatch, splitUnifiedDiff } from '../lib/parseDiff.js'
 import { useViewed } from '../hooks/useViewed.js'
 import { useComments } from '../hooks/useComments.js'
 import ProgressGauge from './ProgressGauge.jsx'
@@ -87,12 +88,19 @@ export default function ReviewDeck({ token, prRef, onExit }) {
     setError('')
     ;(async () => {
       try {
-        const [m, rawFiles] = await Promise.all([
+        const [m, rawFiles, diffText] = await Promise.all([
           fetchPullRequest(token, prRef),
           fetchPullRequestFiles(token, prRef),
+          fetchPullRequestDiff(token, prRef),
         ])
         if (cancelled) return
-        const parsed = rawFiles.map((f) => ({ ...f, rows: parsePatch(f.patch) }))
+        // The files endpoint omits `patch` for large files / large PRs; fill
+        // those from the full unified diff so they still render inline.
+        const diffMap = splitUnifiedDiff(diffText)
+        const parsed = rawFiles.map((f) => {
+          const patch = f.patch || diffMap.get(f.filename) || null
+          return { ...f, patch, rows: parsePatch(patch) }
+        })
         setMeta(m)
         setFiles(parsed)
         setStatus('ready')

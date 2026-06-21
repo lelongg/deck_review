@@ -95,3 +95,45 @@ export function parsePatch(patch) {
 export function commentKey(path, side, line) {
   return `${path}::${side}::${line}`
 }
+
+// Split a whole-PR unified diff (the `application/vnd.github.diff` payload)
+// into a Map of filename -> patch, where each patch starts at the first hunk
+// header (`@@`) — matching the shape of the REST per-file `patch` field that
+// parsePatch expects. Binary files (no textual hunk) are skipped.
+export function splitUnifiedDiff(text) {
+  const map = new Map()
+  if (!text) return map
+
+  // Each file section begins with a "diff --git a/… b/…" line.
+  const sections = text.split(/^diff --git /m)
+  for (const section of sections) {
+    if (!section.trim()) continue
+
+    // Resolve the file path: prefer the new path (`+++ b/…`); for deletions
+    // (`+++ /dev/null`) fall back to the old path (`--- a/…`).
+    let path = null
+    const plus = section.match(/^\+\+\+ b\/(.+)$/m)
+    if (plus) {
+      path = plus[1]
+    } else {
+      const minus = section.match(/^--- a\/(.+)$/m)
+      if (minus) path = minus[1]
+    }
+    if (!path) continue
+
+    // Git quotes paths containing unusual characters; unwrap those.
+    path = path.trim()
+    if (path.startsWith('"') && path.endsWith('"')) {
+      try {
+        path = JSON.parse(path)
+      } catch {
+        /* leave as-is */
+      }
+    }
+
+    const at = section.indexOf('\n@@')
+    if (at === -1) continue // binary or no textual hunk
+    map.set(path, section.slice(at + 1))
+  }
+  return map
+}

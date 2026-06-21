@@ -55,6 +55,24 @@ export async function fetchPullRequest(token, { owner, repo, number }) {
   }
 }
 
+// GET /repos/{owner}/{repo}/pulls/{n} as a raw unified diff. The per-file
+// `patch` from the files endpoint is omitted for large files / large PRs, so we
+// use this fuller source to fill the gaps. Returns null when the diff is too
+// large for the API (406) or otherwise unavailable — callers fall back to
+// whatever per-file patches they have.
+export async function fetchPullRequestDiff(token, { owner, repo, number }) {
+  let res
+  try {
+    res = await fetch(`${API}/repos/${owner}/${repo}/pulls/${number}`, {
+      headers: { ...restHeaders(token), Accept: 'application/vnd.github.diff' },
+    })
+  } catch {
+    return null
+  }
+  if (!res.ok) return null
+  return res.text()
+}
+
 // GET /repos/{owner}/{repo}/pulls/{n}/files — paginate until a page is short.
 export async function fetchPullRequestFiles(token, { owner, repo, number }) {
   const out = []
