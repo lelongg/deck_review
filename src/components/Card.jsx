@@ -20,6 +20,8 @@ export default function Card({
   threadsByAnchor,
   serverCommentIds,
   onReply,
+  expandedThreads,
+  onToggleThread,
   onAddComment,
   onRemoveComment,
   onToggleViewed,
@@ -77,6 +79,8 @@ export default function Card({
             threadsByAnchor={threadsByAnchor}
             serverCommentIds={serverCommentIds}
             onReply={onReply}
+            expandedThreads={expandedThreads}
+            onToggleThread={onToggleThread}
             onAddComment={onAddComment}
             onRemoveComment={onRemoveComment}
             wrap={wrap}

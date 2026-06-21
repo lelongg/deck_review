@@ -4,6 +4,7 @@ import {
   createCommentReply,
 } from '../lib/github.js'
 import { commentKey } from '../lib/parseDiff.js'
+import { getJSON, setJSON } from '../lib/storage.js'
 
 // Group a flat list of review comments into threads. A thread is a root
 // comment plus its replies (in_reply_to_id chains resolved to the root), and
@@ -49,6 +50,22 @@ function buildThreads(comments) {
 // Existing review-comment threads for one PR, with the ability to reply.
 export function usePullComments(token, ref) {
   const [threads, setThreads] = useState([])
+
+  // Threads are collapsed by default; we persist the set of expanded ones per
+  // PR so the open/closed state survives reopening cards and reloads.
+  const openKey = `deck:threadsopen:${ref.owner}/${ref.repo}#${ref.number}`
+  const [expanded, setExpanded] = useState(() => new Set(getJSON(openKey, [])))
+  useEffect(() => {
+    setJSON(openKey, [...expanded])
+  }, [openKey, expanded])
+  const toggleThread = useCallback((rootId) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(rootId)) next.delete(rootId)
+      else next.add(rootId)
+      return next
+    })
+  }, [])
 
   const refresh = useCallback(async () => {
     try {
@@ -108,5 +125,5 @@ export function usePullComments(token, ref) {
     return s
   }, [threads])
 
-  return { byAnchor, ids, reply, refresh }
+  return { byAnchor, ids, reply, refresh, expanded, toggleThread }
 }

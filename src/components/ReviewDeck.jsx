@@ -404,6 +404,8 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         threadsByAnchor={threadsApi.byAnchor}
         serverCommentIds={threadsApi.ids}
         onReply={threadsApi.reply}
+        expandedThreads={threadsApi.expanded}
+        onToggleThread={threadsApi.toggleThread}
         addComment={postComment}
         removeComment={unpostComment}
         onMarkViewed={markViewedAndAdvance}
@@ -506,6 +508,8 @@ function CardStack({
   threadsByAnchor,
   serverCommentIds,
   onReply,
+  expandedThreads,
+  onToggleThread,
   addComment,
   removeComment,
   onMarkViewed,
@@ -585,6 +589,8 @@ function CardStack({
         threadsByAnchor={threadsByAnchor}
         serverCommentIds={serverCommentIds}
         onReply={onReply}
+        expandedThreads={expandedThreads}
+        onToggleThread={onToggleThread}
         onAddComment={addComment}
         onRemoveComment={removeComment}
         onToggleViewed={() => onToggleViewed(file.filename)}

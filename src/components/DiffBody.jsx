@@ -25,6 +25,8 @@ export default function DiffBody({
   threadsByAnchor,
   serverCommentIds,
   onReply,
+  expandedThreads,
+  onToggleThread,
   onAddComment,
   onRemoveComment,
   wrap = true,
@@ -228,7 +230,13 @@ export default function DiffBody({
             </div>
 
             {rowThreads?.map((t) => (
-              <Thread key={t.rootId} thread={t} onReply={onReply} />
+              <Thread
+                key={t.rootId}
+                thread={t}
+                onReply={onReply}
+                expanded={!!expandedThreads?.has(t.rootId)}
+                onToggle={() => onToggleThread(t.rootId)}
+              />
             ))}
 
             {rowComments
@@ -274,9 +282,8 @@ function composerLabel(composer) {
 
 // An existing review-comment thread (root + replies) shown inline, with a
 // reply box that posts into the thread.
-function Thread({ thread, onReply }) {
+function Thread({ thread, onReply, expanded, onToggle }) {
   const [open, setOpen] = useState(false)
-  const [collapsed, setCollapsed] = useState(false)
   const [text, setText] = useState('')
   const [posting, setPosting] = useState(false)
   const [error, setError] = useState('')
@@ -304,17 +311,17 @@ function Thread({ thread, onReply }) {
     <div className="thread">
       <button
         className="thread__head"
-        onClick={() => setCollapsed((c) => !c)}
-        aria-expanded={!collapsed}
+        onClick={onToggle}
+        aria-expanded={expanded}
       >
-        <span className="thread__chev">{collapsed ? '▸' : '▾'}</span>
+        <span className="thread__chev">{expanded ? '▾' : '▸'}</span>
         <span className="thread__author">{rootAuthor}</span>
         <span className="thread__meta">
           {count} comment{count > 1 ? 's' : ''}
         </span>
       </button>
 
-      {collapsed ? null : (
+      {expanded && (
         <>
           {thread.comments.map((c) => (
             <div key={c.id} className="thread__comment">
