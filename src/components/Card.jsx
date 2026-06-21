@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import DiffBody from './DiffBody.jsx'
 import { useFileDiff } from '../lib/fileDiff.js'
 
@@ -91,6 +91,53 @@ export default function Card({
     body.scrollTop = frac * (body.scrollHeight - body.clientHeight)
   }
 
+  // Pixel offsets (within the scroll body) of each change block's first row.
+  function changeBlockTops() {
+    const body = bodyRef.current
+    if (!body) return []
+    const br = body.getBoundingClientRect()
+    const tops = []
+    let prevBottom = -Infinity
+    for (const el of body.querySelectorAll(
+      '.diff__row--add, .diff__row--del',
+    )) {
+      const r = el.getBoundingClientRect()
+      const top = body.scrollTop + (r.top - br.top)
+      if (top - prevBottom > r.height + 4) tops.push(top)
+      prevBottom = body.scrollTop + (r.bottom - br.top)
+    }
+    return tops
+  }
+
+  function jumpChange(dir) {
+    const body = bodyRef.current
+    if (!body) return
+    const tops = changeBlockTops()
+    const cur = body.scrollTop
+    const target =
+      dir > 0
+        ? tops.find((t) => t > cur + 4)
+        : [...tops].reverse().find((t) => t < cur - 4)
+    if (target != null) {
+      body.scrollTo({ top: Math.max(0, target - 8), behavior: 'smooth' })
+    }
+  }
+
+  // On arrival (and once the full diff loads), jump to the first change.
+  useEffect(() => {
+    if (!showDiff) return
+    const body = bodyRef.current
+    if (!body) return
+    const id = requestAnimationFrame(() => {
+      const el = body.querySelector('.diff__row--add, .diff__row--del')
+      if (!el) return
+      const r = el.getBoundingClientRect()
+      const br = body.getBoundingClientRect()
+      body.scrollTop += r.top - br.top - 8
+    })
+    return () => cancelAnimationFrame(id)
+  }, [rows, showDiff])
+
   return (
     <article className={`card ${viewed ? 'card--viewed' : ''}`} style={style}>
       <header className="card__head">
@@ -174,12 +221,32 @@ export default function Card({
       </div>
 
       <footer className="card__foot">
+        {showDiff && segments.length > 0 && (
+          <button
+            className="card__nav"
+            onClick={() => jumpChange(-1)}
+            aria-label="previous change"
+            title="previous change"
+          >
+            ↑
+          </button>
+        )}
         <button
           className={`btn btn--mark ${viewed ? 'btn--marked' : ''}`}
           onClick={viewed ? onToggleViewed : onMarkViewed}
         >
           {viewed ? 'viewed ✓ — unmark' : 'mark viewed'}
         </button>
+        {showDiff && segments.length > 0 && (
+          <button
+            className="card__nav"
+            onClick={() => jumpChange(1)}
+            aria-label="next change"
+            title="next change"
+          >
+            ↓
+          </button>
+        )}
       </footer>
     </article>
   )

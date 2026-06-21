@@ -540,15 +540,29 @@ em {
 }
 
 .card__foot {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
   padding: 7px 10px;
   border-top: 1px solid var(--line-soft);
   background: var(--bg-card-2);
 }
 .btn--mark {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   background: transparent;
   border-color: var(--amber-dim);
   color: var(--amber);
+}
+.card__nav {
+  flex: none;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--ink-dim);
+  font-size: 15px;
+  line-height: 1;
+  padding: 0 12px;
 }
 .btn--marked {
   color: var(--ink-dim);
