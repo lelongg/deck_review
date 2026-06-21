@@ -309,18 +309,34 @@ function CardStack({
 
   function onTouchStart(e) {
     const t = e.touches[0]
-    start.current = { x: t.clientX, y: t.clientY, locked: null }
+    // In no-wrap mode the code body scrolls horizontally; remember it so a
+    // horizontal pan over the code scrolls the code instead of swiping the
+    // card (unless the code is already scrolled to the edge).
+    const sx = e.target?.closest?.('.card__body--scroll-x')
+    const scrollEl = sx && sx.scrollWidth > sx.clientWidth + 1 ? sx : null
+    start.current = { x: t.clientX, y: t.clientY, locked: null, scrollEl }
   }
   function onTouchMove(e) {
     if (!start.current) return
     const t = e.touches[0]
     const dx = t.clientX - start.current.x
     const dy = t.clientY - start.current.y
-    // Decide once whether this gesture is a horizontal swipe or a vertical
-    // scroll; only horizontal-dominant gestures drive the card.
+    // Decide once: vertical scroll, horizontal card-swipe, or horizontal
+    // code-scroll. Only 'x' drives the card.
     if (start.current.locked === null) {
       if (Math.abs(dx) < 8 && Math.abs(dy) < 8) return
-      start.current.locked = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+      if (Math.abs(dx) <= Math.abs(dy)) {
+        start.current.locked = 'y'
+      } else {
+        // Horizontal: if over scrollable code that can still scroll this
+        // direction, let it scroll; only swipe the card at the scroll edge.
+        const el = start.current.scrollEl
+        const atLeft = !el || el.scrollLeft <= 0
+        const atRight =
+          !el || el.scrollLeft + el.clientWidth >= el.scrollWidth - 1
+        const canSwipe = !el || (dx > 0 && atLeft) || (dx < 0 && atRight)
+        start.current.locked = canSwipe ? 'x' : 'scroll'
+      }
     }
     if (start.current.locked === 'x') {
       setDrag(dx)

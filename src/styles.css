@@ -586,15 +586,14 @@ em {
   tab-size: 2;
 }
 
-/* no-wrap: rows grow to their content so the body can scroll horizontally.
-   width:max-content makes .diff as wide as its widest row, and narrower rows
-   stretch to fill it so add/del backgrounds span the full scroll width. */
-.diff--nowrap {
-  width: max-content;
-  min-width: 100%;
-}
+/* no-wrap: only the code ROWS grow to their content and overflow horizontally
+   (the card body scrolls). The .diff container itself stays at card width, so
+   the inline notes/composer — which share each row's wrapper — keep the same
+   width as in wrap mode. */
 .diff--nowrap .diff__row {
   grid-template-columns: 64px 12px max-content;
+  width: max-content;
+  min-width: 100%;
 }
 .diff--nowrap .diff__code,
 .diff--nowrap .diff__hunk {
