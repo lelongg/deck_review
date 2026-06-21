@@ -168,27 +168,28 @@ export default function ReviewDeck({ token, prRef, onExit }) {
     if (first > 0) setActive(first)
   }, [status, files, total, viewedApi])
 
-  // Arrow-key fallback for navigation.
-  useEffect(() => {
-    function onKey(e) {
-      if (fileListOpen || finishOpen) return
-      if (e.key === 'ArrowRight') next()
-      else if (e.key === 'ArrowLeft') prev()
-      else if (e.key === 'w' || e.key === 'W') toggleWrap()
-      else if (e.key === 'v' || e.key === 'V') cycleView()
-    }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [next, prev, fileListOpen, finishOpen, toggleWrap, cycleView])
-
   const viewedCount = useMemo(
     () => files.filter((f) => viewedApi.isViewed(f.filename)).length,
     [files, viewedApi],
   )
 
+  // LIFO history of files marked viewed this session, so the action can be
+  // undone one step at a time. Unmarking a file (manually or via undo) drops it.
+  const [viewHistory, setViewHistory] = useState([])
+  const pushHistory = useCallback(
+    (filename) =>
+      setViewHistory((h) => [...h.filter((f) => f !== filename), filename]),
+    [],
+  )
+  const dropHistory = useCallback(
+    (filename) => setViewHistory((h) => h.filter((f) => f !== filename)),
+    [],
+  )
+
   const markViewedAndAdvance = useCallback(
     (filename) => {
       viewedApi.setFileViewed(filename, true)
+      pushHistory(filename)
       // auto-advance to the next not-yet-viewed card, else just next.
       const fromIndex = files.findIndex((f) => f.filename === filename)
       let target = -1
@@ -208,8 +209,54 @@ export default function ReviewDeck({ token, prRef, onExit }) {
       }
       goTo(target === -1 ? fromIndex + 1 : target)
     },
-    [files, viewedApi, goTo],
+    [files, viewedApi, goTo, pushHistory],
   )
+
+  // Manual toggle from the card footer; keeps the undo history in sync.
+  const toggleViewed = useCallback(
+    (filename) => {
+      const willView = !viewedApi.isViewed(filename)
+      viewedApi.setFileViewed(filename, willView)
+      if (willView) pushHistory(filename)
+      else dropHistory(filename)
+    },
+    [viewedApi, pushHistory, dropHistory],
+  )
+
+  // Undo the most recent mark-viewed: unmark it and jump back to that card.
+  const undoViewed = useCallback(() => {
+    if (viewHistory.length === 0) return
+    const filename = viewHistory[viewHistory.length - 1]
+    viewedApi.setFileViewed(filename, false)
+    setViewHistory((h) => h.slice(0, -1))
+    const idx = files.findIndex((f) => f.filename === filename)
+    if (idx !== -1) goTo(idx)
+  }, [viewHistory, viewedApi, files, goTo])
+
+  // Keyboard shortcuts (defined here so the handlers above are in scope).
+  useEffect(() => {
+    function onKey(e) {
+      if (fileListOpen || finishOpen) return
+      if (e.key === 'ArrowRight') next()
+      else if (e.key === 'ArrowLeft') prev()
+      else if (e.key === 'w' || e.key === 'W') toggleWrap()
+      else if (e.key === 'v' || e.key === 'V') cycleView()
+      else if ((e.metaKey || e.ctrlKey) && e.key === 'z') {
+        e.preventDefault()
+        undoViewed()
+      } else if (e.key === 'u' || e.key === 'U') undoViewed()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [
+    next,
+    prev,
+    fileListOpen,
+    finishOpen,
+    toggleWrap,
+    cycleView,
+    undoViewed,
+  ])
 
   if (status === 'loading') {
     return (
@@ -253,7 +300,12 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         onCycleView={cycleView}
       />
 
-      <ProgressGauge done={viewedCount} total={total} />
+      <ProgressGauge
+        done={viewedCount}
+        total={total}
+        canUndo={viewHistory.length > 0}
+        onUndo={undoViewed}
+      />
 
       <CardStack
         files={files}
@@ -261,6 +313,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         onNext={next}
         onPrev={prev}
         viewedApi={viewedApi}
+        onToggleViewed={toggleViewed}
         commentsByPath={commentsApi.byPath}
         addComment={postComment}
         removeComment={unpostComment}
@@ -357,6 +410,7 @@ function CardStack({
   onNext,
   onPrev,
   viewedApi,
+  onToggleViewed,
   commentsByPath,
   addComment,
   removeComment,
@@ -436,7 +490,7 @@ function CardStack({
         comments={commentsByPath.get(file.filename) || []}
         onAddComment={addComment}
         onRemoveComment={removeComment}
-        onToggleViewed={() => viewedApi.toggleViewed(file.filename)}
+        onToggleViewed={() => onToggleViewed(file.filename)}
         onMarkViewed={() => onMarkViewed(file.filename)}
         wrap={wrap}
         view={view}

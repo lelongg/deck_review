@@ -120,7 +120,8 @@ em {
   font-weight: 700;
 }
 .btn:disabled,
-.note__remove:disabled {
+.note__remove:disabled,
+.gauge__undo:disabled {
   opacity: 0.4;
   cursor: not-allowed;
 }
@@ -339,6 +340,16 @@ em {
   align-items: center;
   gap: 10px;
   padding: 8px 14px;
+}
+.gauge__undo {
+  flex: none;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--ink-dim);
+  font-size: 13px;
+  line-height: 1;
+  padding: 4px 8px;
 }
 .gauge__track {
   flex: 1;
