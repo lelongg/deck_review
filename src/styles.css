@@ -258,7 +258,8 @@ em {
   padding: 4px 6px;
   flex: none;
 }
-.topbar__wrap {
+.topbar__wrap,
+.topbar__view {
   flex: none;
   background: none;
   border: 1px solid var(--line);
@@ -268,7 +269,12 @@ em {
   line-height: 1;
   padding: 6px 9px;
 }
-.topbar__wrap.is-on {
+.topbar__view {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+}
+.topbar__wrap.is-on,
+.topbar__view.is-on {
   border-color: var(--amber-dim);
   color: var(--amber);
 }
@@ -510,6 +516,12 @@ em {
 .diff {
   font-size: 12px;
   line-height: 1.5;
+}
+.diff--empty {
+  padding: 22px 14px;
+  color: var(--ink-faint);
+  text-align: center;
+  font-size: 12px;
 }
 .diff__hunk {
   background: var(--bg-raise);

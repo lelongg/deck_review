@@ -14,7 +14,11 @@ import Card from './Card.jsx'
 import FileList from './FileList.jsx'
 import FinishSheet from './FinishSheet.jsx'
 import { getJSON, setJSON } from '../lib/storage.js'
-import { WRAP_KEY } from '../lib/constants.js'
+import { WRAP_KEY, VIEW_KEY } from '../lib/constants.js'
+
+// Cycle order + button labels for the diff-side control.
+const VIEW_ORDER = { unified: 'before', before: 'after', after: 'unified' }
+const VIEW_LABEL = { unified: 'both', before: 'old', after: 'new' }
 
 const SWIPE_THRESHOLD = 60 // px before a horizontal swipe commits
 
@@ -35,6 +39,16 @@ export default function ReviewDeck({ token, prRef, onExit }) {
     setWrap((w) => {
       const next = !w
       setJSON(WRAP_KEY, next)
+      return next
+    })
+  }, [])
+
+  // Diff side: show both, only the old (before), or only the new (after).
+  const [view, setView] = useState(() => getJSON(VIEW_KEY, 'unified'))
+  const cycleView = useCallback(() => {
+    setView((v) => {
+      const next = VIEW_ORDER[v] || 'unified'
+      setJSON(VIEW_KEY, next)
       return next
     })
   }, [])
@@ -161,10 +175,11 @@ export default function ReviewDeck({ token, prRef, onExit }) {
       if (e.key === 'ArrowRight') next()
       else if (e.key === 'ArrowLeft') prev()
       else if (e.key === 'w' || e.key === 'W') toggleWrap()
+      else if (e.key === 'v' || e.key === 'V') cycleView()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [next, prev, fileListOpen, finishOpen, toggleWrap])
+  }, [next, prev, fileListOpen, finishOpen, toggleWrap, cycleView])
 
   const viewedCount = useMemo(
     () => files.filter((f) => viewedApi.isViewed(f.filename)).length,
@@ -234,6 +249,8 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         syncing={viewedApi.syncing}
         wrap={wrap}
         onToggleWrap={toggleWrap}
+        view={view}
+        onCycleView={cycleView}
       />
 
       <ProgressGauge done={viewedCount} total={total} />
@@ -249,6 +266,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         removeComment={unpostComment}
         onMarkViewed={markViewedAndAdvance}
         wrap={wrap}
+        view={view}
       />
 
       <PositionDots total={total} active={active} />
@@ -294,11 +312,20 @@ function TopBar({
   syncing,
   wrap,
   onToggleWrap,
+  view,
+  onCycleView,
 }) {
   return (
     <header className="topbar">
       <button className="topbar__menu" onClick={onMenu} aria-label="file list">
         ☰
+      </button>
+      <button
+        className={`topbar__view ${view !== 'unified' ? 'is-on' : ''}`}
+        onClick={onCycleView}
+        title={`Diff side: ${VIEW_LABEL[view]} (v)`}
+      >
+        {VIEW_LABEL[view]}
       </button>
       <button
         className={`topbar__wrap ${wrap ? 'is-on' : ''}`}
@@ -335,6 +362,7 @@ function CardStack({
   removeComment,
   onMarkViewed,
   wrap,
+  view,
 }) {
   const [drag, setDrag] = useState(0) // live horizontal drag offset
   const start = useRef(null)
@@ -411,6 +439,7 @@ function CardStack({
         onToggleViewed={() => viewedApi.toggleViewed(file.filename)}
         onMarkViewed={() => onMarkViewed(file.filename)}
         wrap={wrap}
+        view={view}
       />
     </div>
   )

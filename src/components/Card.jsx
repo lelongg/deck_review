@@ -22,6 +22,7 @@ export default function Card({
   onToggleViewed,
   onMarkViewed,
   wrap,
+  view,
 }) {
   // Pull the active card a little toward the finger; fade slightly as it goes.
   const style = dragX
@@ -73,6 +74,7 @@ export default function Card({
             onAddComment={onAddComment}
             onRemoveComment={onRemoveComment}
             wrap={wrap}
+            view={view}
           />
         ) : (
           <div className="card__nopatch">

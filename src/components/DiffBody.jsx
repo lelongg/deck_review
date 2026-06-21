@@ -9,18 +9,31 @@ import { languageForPath, useGrammar, useHighlightedRows } from '../lib/highligh
 //   - press the line-number gutter and drag vertically -> multi-line range
 //     (the gutter has touch-action:none so the drag selects instead of
 //     scrolling; the code column still scrolls normally)
+// Drop the side the current view hides: 'before' keeps old (context + del),
+// 'after' keeps new (context + add); hunk/meta always stay.
+function filterRows(rows, view) {
+  if (view === 'before') return rows.filter((r) => r.type !== 'add')
+  if (view === 'after') return rows.filter((r) => r.type !== 'del')
+  return rows
+}
+
 export default function DiffBody({
-  rows,
+  rows: allRows,
   path,
   comments,
   onAddComment,
   onRemoveComment,
   wrap = true,
+  view = 'unified',
 }) {
+  // Rows actually shown (and interacted with) for the chosen diff side.
+  const rows = useMemo(() => filterRows(allRows, view), [allRows, view])
   // Syntax highlighting: load this file's grammar (lazily, from CDN) and
   // highlight every code row once it's ready (async — see useHighlightedRows).
   const grammar = useGrammar(languageForPath(path))
-  const highlighted = useHighlightedRows(grammar, rows)
+  // Highlight the full row set so the map (keyed by row id) stays stable when
+  // the view filters rows in/out.
+  const highlighted = useHighlightedRows(grammar, allRows)
 
   // composer: null | { kind:'single'|'range', anchorIdx, top, bottom }
   const [composer, setComposer] = useState(null)
@@ -125,6 +138,18 @@ export default function DiffBody({
       body,
     })
     setComposer(null)
+  }
+
+  // A one-sided view of a pure add/delete file can have no lines to show.
+  const hasCode = rows.some(
+    (r) => r.type === 'add' || r.type === 'del' || r.type === 'context',
+  )
+  if (!hasCode) {
+    return (
+      <div className="diff diff--empty">
+        nothing to show in the {view === 'before' ? 'before' : 'after'} view
+      </div>
+    )
   }
 
   return (
