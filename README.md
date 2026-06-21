@@ -77,6 +77,7 @@ nix develop        # drops you in with node 22 + npm
 - [x] Line-range comments — drag the line-number gutter to select a span
 - [x] Syntax highlighting — per-row tree-sitter coloring via [arborium]; grammars
       are fetched on demand from the jsDelivr CDN (so highlighting needs network)
+- [x] Comment threads — existing review conversations shown inline, with replies
 - [ ] OAuth device flow instead of a pasted PAT
 
 [arborium]: https://github.com/bearcove/arborium

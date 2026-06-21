@@ -649,6 +649,44 @@ em {
   color: var(--ink);
 }
 
+/* existing review-comment threads */
+.thread {
+  margin: 4px 8px;
+  padding: 6px 9px;
+  background: var(--bg-raise);
+  border-left: 2px solid var(--line);
+  border-radius: 0 6px 6px 0;
+}
+.thread__comment {
+  padding: 3px 0;
+  font-size: 12px;
+}
+.thread__comment + .thread__comment {
+  border-top: 1px solid var(--line-soft);
+}
+.thread__author {
+  color: var(--amber);
+  font-weight: 700;
+  margin-right: 6px;
+}
+.thread__body {
+  color: var(--ink);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.thread__replybtn {
+  margin-top: 4px;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  font-size: 11px;
+  padding: 2px 0;
+  text-decoration: underline;
+}
+.thread__reply {
+  margin-top: 6px;
+}
+
 /* inline notes + composer */
 .note {
   display: flex;

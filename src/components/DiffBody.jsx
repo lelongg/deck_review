@@ -21,6 +21,9 @@ export default function DiffBody({
   rows: allRows,
   path,
   comments,
+  threadsByAnchor,
+  serverCommentIds,
+  onReply,
   onAddComment,
   onRemoveComment,
   wrap = true,
@@ -179,6 +182,7 @@ export default function DiffBody({
             ? commentKey(path, row.side, row.anchorLine)
             : null
         const rowComments = anchorK ? commentsByAnchor.get(anchorK) : null
+        const rowThreads = anchorK ? threadsByAnchor?.get(anchorK) : null
         const commentable = row.anchorLine != null
         const selected = sel && idx >= sel.lo && idx <= sel.hi && commentable
         const composerHere = composer && composer.anchorIdx === idx
@@ -222,9 +226,15 @@ export default function DiffBody({
               />
             </div>
 
-            {rowComments?.map((c) => (
-              <Note key={c.id} comment={c} onRemove={onRemoveComment} />
+            {rowThreads?.map((t) => (
+              <Thread key={t.rootId} thread={t} onReply={onReply} />
             ))}
+
+            {rowComments
+              ?.filter((c) => !serverCommentIds?.has(c.id))
+              .map((c) => (
+                <Note key={c.id} comment={c} onRemove={onRemoveComment} />
+              ))}
 
             {composerHere && (
               <Composer
@@ -259,6 +269,79 @@ function composerLabel(composer) {
     bottom.side,
     bottom.anchorLine,
   )}`
+}
+
+// An existing review-comment thread (root + replies) shown inline, with a
+// reply box that posts into the thread.
+function Thread({ thread, onReply }) {
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState('')
+  const [posting, setPosting] = useState(false)
+  const [error, setError] = useState('')
+
+  async function send() {
+    const body = text.trim()
+    if (!body || posting) return
+    setPosting(true)
+    setError('')
+    try {
+      await onReply(thread.rootId, body)
+      setText('')
+      setOpen(false)
+    } catch (err) {
+      setError(err.message || 'Failed to reply.')
+    } finally {
+      setPosting(false)
+    }
+  }
+
+  return (
+    <div className="thread">
+      {thread.comments.map((c) => (
+        <div key={c.id} className="thread__comment">
+          <span className="thread__author">{c.author}</span>
+          <span className="thread__body">{c.body}</span>
+        </div>
+      ))}
+      {open ? (
+        <div className="thread__reply">
+          <textarea
+            className="composer__input"
+            autoFocus
+            rows={2}
+            disabled={posting}
+            placeholder="reply…"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') send()
+            }}
+          />
+          {error && <p className="composer__error">{error}</p>}
+          <div className="composer__actions">
+            <button
+              className="btn btn--ghost"
+              disabled={posting}
+              onClick={() => setOpen(false)}
+            >
+              cancel
+            </button>
+            <button
+              className="btn btn--primary"
+              disabled={!text.trim() || posting}
+              onClick={send}
+            >
+              {posting ? 'replying…' : 'reply'}
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button className="thread__replybtn" onClick={() => setOpen(true)}>
+          reply
+        </button>
+      )}
+    </div>
+  )
 }
 
 // An inline note for a posted comment, with a remove control that deletes it

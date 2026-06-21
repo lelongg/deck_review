@@ -17,6 +17,9 @@ export default function Card({
   dragX,
   viewed,
   comments,
+  threadsByAnchor,
+  serverCommentIds,
+  onReply,
   onAddComment,
   onRemoveComment,
   onToggleViewed,
@@ -71,6 +74,9 @@ export default function Card({
             rows={file.rows}
             path={file.filename}
             comments={comments}
+            threadsByAnchor={threadsByAnchor}
+            serverCommentIds={serverCommentIds}
+            onReply={onReply}
             onAddComment={onAddComment}
             onRemoveComment={onRemoveComment}
             wrap={wrap}

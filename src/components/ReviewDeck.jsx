@@ -9,6 +9,7 @@ import {
 import { parsePatch, splitUnifiedDiff } from '../lib/parseDiff.js'
 import { useViewed } from '../hooks/useViewed.js'
 import { useComments } from '../hooks/useComments.js'
+import { usePullComments } from '../hooks/usePullComments.js'
 import ProgressGauge from './ProgressGauge.jsx'
 import Card from './Card.jsx'
 import FileList from './FileList.jsx'
@@ -55,6 +56,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
 
   const viewedApi = useViewed(token, prRef)
   const commentsApi = useComments(prRef)
+  const threadsApi = usePullComments(token, prRef)
 
   // Post a comment to GitHub immediately, then record it locally with the id
   // GitHub assigned. Rejects on failure so the composer can show the error and
@@ -99,6 +101,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
   const [updateAvailable, setUpdateAvailable] = useState(false)
   const [reloading, setReloading] = useState(false)
   const { refresh: refreshViewed } = viewedApi
+  const { refresh: refreshThreads } = threadsApi
 
   // Fetch + parse the deck (meta, files, diff). The files endpoint omits
   // `patch` for large files / large PRs, so we fill gaps from the full diff.
@@ -150,7 +153,8 @@ export default function ReviewDeck({ token, prRef, onExit }) {
       .catch(() => {})
       .finally(() => setReloading(false))
     refreshViewed()
-  }, [fetchDeck, refreshViewed])
+    refreshThreads()
+  }, [fetchDeck, refreshViewed, refreshThreads])
 
   // Detect new commits: poll the head SHA on an interval and on focus.
   // (headSha is derived above for comment anchoring.)
@@ -397,6 +401,9 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         viewedApi={viewedApi}
         onToggleViewed={toggleViewed}
         commentsByPath={commentsApi.byPath}
+        threadsByAnchor={threadsApi.byAnchor}
+        serverCommentIds={threadsApi.ids}
+        onReply={threadsApi.reply}
         addComment={postComment}
         removeComment={unpostComment}
         onMarkViewed={markViewedAndAdvance}
@@ -496,6 +503,9 @@ function CardStack({
   viewedApi,
   onToggleViewed,
   commentsByPath,
+  threadsByAnchor,
+  serverCommentIds,
+  onReply,
   addComment,
   removeComment,
   onMarkViewed,
@@ -572,6 +582,9 @@ function CardStack({
         dragX={drag}
         viewed={viewedApi.isViewed(file.filename)}
         comments={commentsByPath.get(file.filename) || []}
+        threadsByAnchor={threadsByAnchor}
+        serverCommentIds={serverCommentIds}
+        onReply={onReply}
         onAddComment={addComment}
         onRemoveComment={removeComment}
         onToggleViewed={() => onToggleViewed(file.filename)}

@@ -137,6 +137,56 @@ export async function deleteReviewComment(token, { owner, repo }, commentId) {
   if (!res.ok && res.status !== 404) throw await toError(res)
 }
 
+// GET /repos/{owner}/{repo}/pulls/{n}/comments — every review comment on the
+// PR (top-level + replies), paginated. Normalized to the fields we render.
+export async function fetchPullRequestComments(token, { owner, repo, number }) {
+  const out = []
+  for (let page = 1; ; page++) {
+    const res = await fetch(
+      `${API}/repos/${owner}/${repo}/pulls/${number}/comments?per_page=100&page=${page}`,
+      { headers: restHeaders(token) },
+    )
+    if (!res.ok) throw await toError(res)
+    const batch = await res.json()
+    for (const c of batch) {
+      out.push({
+        id: c.id,
+        inReplyToId: c.in_reply_to_id ?? null,
+        path: c.path,
+        side: c.side || 'RIGHT',
+        // `line` is null for outdated comments; fall back to the original line.
+        line: c.line ?? c.original_line ?? null,
+        body: c.body,
+        author: c.user?.login || '',
+        createdAt: c.created_at,
+        htmlUrl: c.html_url,
+      })
+    }
+    if (batch.length < 100) break
+  }
+  return out
+}
+
+// POST /repos/{owner}/{repo}/pulls/{n}/comments/{id}/replies — reply in a
+// review-comment thread.
+export async function createCommentReply(
+  token,
+  { owner, repo, number },
+  commentId,
+  body,
+) {
+  const res = await fetch(
+    `${API}/repos/${owner}/${repo}/pulls/${number}/comments/${commentId}/replies`,
+    {
+      method: 'POST',
+      headers: { ...restHeaders(token), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ body }),
+    },
+  )
+  if (!res.ok) throw await toError(res)
+  return res.json()
+}
+
 // POST /repos/{owner}/{repo}/pulls/{n}/reviews — submit the overall verdict.
 // `event` is APPROVE | REQUEST_CHANGES | COMMENT. Inline comments are posted
 // live (see createReviewComment), so this carries only the summary + verdict.
