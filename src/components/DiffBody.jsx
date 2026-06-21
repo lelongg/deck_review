@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { commentKey } from '../lib/parseDiff.js'
 import { languageForPath, useGrammar, useHighlightedRows } from '../lib/highlight.js'
+import { renderMarkdown } from '../lib/markdown.js'
 
 // Renders the parsed diff rows for a file, with inline comment composing.
 //
@@ -275,6 +276,7 @@ function composerLabel(composer) {
 // reply box that posts into the thread.
 function Thread({ thread, onReply }) {
   const [open, setOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(false)
   const [text, setText] = useState('')
   const [posting, setPosting] = useState(false)
   const [error, setError] = useState('')
@@ -295,15 +297,35 @@ function Thread({ thread, onReply }) {
     }
   }
 
+  const count = thread.comments.length
+  const rootAuthor = thread.comments[0]?.author
+
   return (
     <div className="thread">
-      {thread.comments.map((c) => (
-        <div key={c.id} className="thread__comment">
-          <span className="thread__author">{c.author}</span>
-          <span className="thread__body">{c.body}</span>
-        </div>
-      ))}
-      {open ? (
+      <button
+        className="thread__head"
+        onClick={() => setCollapsed((c) => !c)}
+        aria-expanded={!collapsed}
+      >
+        <span className="thread__chev">{collapsed ? '▸' : '▾'}</span>
+        <span className="thread__author">{rootAuthor}</span>
+        <span className="thread__meta">
+          {count} comment{count > 1 ? 's' : ''}
+        </span>
+      </button>
+
+      {collapsed ? null : (
+        <>
+          {thread.comments.map((c) => (
+            <div key={c.id} className="thread__comment">
+              <span className="thread__author">{c.author}</span>
+              <div
+                className="thread__body markdown"
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(c.body) }}
+              />
+            </div>
+          ))}
+          {open ? (
         <div className="thread__reply">
           <textarea
             className="composer__input"
@@ -335,10 +357,12 @@ function Thread({ thread, onReply }) {
             </button>
           </div>
         </div>
-      ) : (
-        <button className="thread__replybtn" onClick={() => setOpen(true)}>
-          reply
-        </button>
+          ) : (
+            <button className="thread__replybtn" onClick={() => setOpen(true)}>
+              reply
+            </button>
+          )}
+        </>
       )}
     </div>
   )
@@ -362,7 +386,10 @@ function Note({ comment, onRemove }) {
   return (
     <div className={`note ${removing ? 'note--busy' : ''}`}>
       <span className="note__side">{anchorLabel(comment)}</span>
-      <span className="note__body">{comment.body}</span>
+      <div
+        className="note__body markdown"
+        dangerouslySetInnerHTML={{ __html: renderMarkdown(comment.body) }}
+      />
       <button
         className="note__remove"
         onClick={remove}
