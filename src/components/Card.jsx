@@ -52,9 +52,6 @@ export default function Card({
   serverCommentIds,
   onReply,
   onResolveThread,
-  expandedThreads,
-  onToggleThread,
-  unseenThreads,
   onAddComment,
   onRemoveComment,
   onToggleViewed,
@@ -178,14 +175,12 @@ export default function Card({
               rows={rows}
               full={full}
               path={file.filename}
+              prRef={prRef}
               comments={comments}
               threadsByAnchor={threadsByAnchor}
               serverCommentIds={serverCommentIds}
               onReply={onReply}
               onResolveThread={onResolveThread}
-              expandedThreads={expandedThreads}
-              onToggleThread={onToggleThread}
-              unseenThreads={unseenThreads}
               onAddComment={onAddComment}
               onRemoveComment={onRemoveComment}
               wrap={wrap}

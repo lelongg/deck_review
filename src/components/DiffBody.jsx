@@ -1,7 +1,13 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { commentKey } from '../lib/parseDiff.js'
 import { languageForPath, useGrammar, useHighlightedRows } from '../lib/highlight.js'
 import { renderMarkdown } from '../lib/markdown.js'
+import {
+  isThreadOpen,
+  setThreadOpen,
+  getThreadSeen,
+  setThreadSeen,
+} from '../lib/threadState.js'
 
 // Renders the parsed diff rows for a file, with inline comment composing.
 //
@@ -22,14 +28,12 @@ export default function DiffBody({
   rows: allRows,
   full = false,
   path,
+  prRef,
   comments,
   threadsByAnchor,
   serverCommentIds,
   onReply,
   onResolveThread,
-  expandedThreads,
-  onToggleThread,
-  unseenThreads,
   onAddComment,
   onRemoveComment,
   wrap = true,
@@ -228,11 +232,9 @@ export default function DiffBody({
               <Thread
                 key={t.rootId}
                 thread={t}
+                prRef={prRef}
                 onReply={onReply}
-                expanded={!!expandedThreads?.has(t.rootId)}
-                onToggle={() => onToggleThread(t.rootId)}
                 onResolve={() => onResolveThread(t.threadId)}
-                unseen={unseenThreads?.get(t.rootId) || 0}
               />
             ))}
 
@@ -278,12 +280,38 @@ function composerLabel(composer) {
 }
 
 // An existing review-comment thread (root + replies) shown inline, with a
-// reply box that posts into the thread.
-function Thread({ thread, onReply, onResolve, expanded, onToggle, unseen }) {
+// reply box that posts into the thread. Owns its expand/seen state locally
+// (persisted) so toggling it doesn't re-render the whole diff.
+function Thread({ thread, prRef, onReply, onResolve }) {
+  const { rootId } = thread
+  const [expanded, setExpanded] = useState(() => isThreadOpen(prRef, rootId))
+  const [seen, setSeen] = useState(() => getThreadSeen(prRef, rootId))
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const [posting, setPosting] = useState(false)
   const [error, setError] = useState('')
+
+  const maxId = useMemo(
+    () => thread.comments.reduce((m, c) => Math.max(m, c.id), 0),
+    [thread.comments],
+  )
+  const unseen = thread.comments.filter((c) => c.id > seen).length
+
+  // Reading an expanded thread (incl. after a new reply) marks it seen.
+  useEffect(() => {
+    if (expanded && maxId > seen) {
+      setThreadSeen(prRef, rootId, maxId)
+      setSeen(maxId)
+    }
+  }, [expanded, maxId, seen, prRef, rootId])
+
+  function toggle() {
+    setExpanded((v) => {
+      const next = !v
+      setThreadOpen(prRef, rootId, next)
+      return next
+    })
+  }
 
   async function send() {
     const body = text.trim()
@@ -309,7 +337,7 @@ function Thread({ thread, onReply, onResolve, expanded, onToggle, unseen }) {
       <div className="thread__head">
         <button
           className="thread__toggle"
-          onClick={onToggle}
+          onClick={toggle}
           aria-expanded={expanded}
         >
           <span className="thread__chev">{expanded ? '▾' : '▸'}</span>
@@ -317,7 +345,9 @@ function Thread({ thread, onReply, onResolve, expanded, onToggle, unseen }) {
           <span className="thread__meta">
             {count} comment{count > 1 ? 's' : ''}
           </span>
-          {unseen > 0 && <span className="thread__badge">{unseen} new</span>}
+          {!expanded && unseen > 0 && (
+            <span className="thread__badge">{unseen} new</span>
+          )}
         </button>
         <button
           className="thread__resolve"

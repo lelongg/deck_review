@@ -5,7 +5,6 @@ import {
   resolveReviewThread,
 } from '../lib/github.js'
 import { commentKey } from '../lib/parseDiff.js'
-import { getJSON, setJSON } from '../lib/storage.js'
 
 // Normalize raw review threads (from GraphQL) into the shape the UI uses:
 // each thread keeps its GraphQL node id (to resolve) and its root comment's
@@ -35,20 +34,6 @@ function buildThreads(rawThreads) {
 export function usePullComments(token, ref) {
   const [threads, setThreads] = useState([])
 
-  // Threads are collapsed by default; persist the expanded set per PR.
-  const openKey = `deck:threadsopen:${ref.owner}/${ref.repo}#${ref.number}`
-  const [expanded, setExpanded] = useState(() => new Set(getJSON(openKey, [])))
-  useEffect(() => {
-    setJSON(openKey, [...expanded])
-  }, [openKey, expanded])
-
-  // Per-thread "seen up to" comment id, persisted, to badge new replies.
-  const seenKey = `deck:threadseen:${ref.owner}/${ref.repo}#${ref.number}`
-  const [seen, setSeen] = useState(() => getJSON(seenKey, {}))
-  useEffect(() => {
-    setJSON(seenKey, seen)
-  }, [seenKey, seen])
-
   const refresh = useCallback(async () => {
     try {
       const raw = await fetchReviewThreads(token, ref)
@@ -61,41 +46,6 @@ export function usePullComments(token, ref) {
   useEffect(() => {
     refresh()
   }, [refresh])
-
-  const maxIdByRoot = useMemo(() => {
-    const m = new Map()
-    for (const t of threads) {
-      let max = 0
-      for (const c of t.comments) if (c.id > max) max = c.id
-      m.set(t.rootId, max)
-    }
-    return m
-  }, [threads])
-
-  const markSeen = useCallback(
-    (rootId) => {
-      const maxId = maxIdByRoot.get(rootId)
-      if (maxId == null) return
-      setSeen((prev) =>
-        (prev[rootId] || 0) >= maxId ? prev : { ...prev, [rootId]: maxId },
-      )
-    },
-    [maxIdByRoot],
-  )
-
-  const toggleThread = useCallback(
-    (rootId) => {
-      const opening = !expanded.has(rootId)
-      setExpanded((prev) => {
-        const next = new Set(prev)
-        if (next.has(rootId)) next.delete(rootId)
-        else next.add(rootId)
-        return next
-      })
-      if (opening) markSeen(rootId)
-    },
-    [expanded, markSeen],
-  )
 
   const reply = useCallback(
     async (rootId, body) => {
@@ -118,10 +68,6 @@ export function usePullComments(token, ref) {
             : t,
         ),
       )
-      setSeen((prev) => ({
-        ...prev,
-        [rootId]: Math.max(prev[rootId] || 0, created.id),
-      }))
     },
     [token, ref],
   )
@@ -164,23 +110,5 @@ export function usePullComments(token, ref) {
     return s
   }, [threads])
 
-  const unseen = useMemo(() => {
-    const m = new Map()
-    for (const t of threads) {
-      const base = seen[t.rootId] || 0
-      m.set(t.rootId, t.comments.filter((c) => c.id > base).length)
-    }
-    return m
-  }, [threads, seen])
-
-  return {
-    byAnchor,
-    ids,
-    reply,
-    resolveThread,
-    refresh,
-    expanded,
-    toggleThread,
-    unseen,
-  }
+  return { byAnchor, ids, reply, resolveThread, refresh }
 }
