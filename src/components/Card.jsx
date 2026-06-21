@@ -46,11 +46,13 @@ export default function Card({
 
   const { dir, base } = splitPath(file.filename)
 
-  // When GitHub gave us no patch (large file / oversized PR diff), rebuild it
-  // from the file's blobs on demand.
+  // Always show the whole file for context: fetch its blobs and build a
+  // full-file diff. Until that's ready, show the partial patch (if GitHub gave
+  // one) so there's no wait; fall back to a message otherwise.
   const lazy = useFileDiff(token, prRef, file, baseSha, headSha)
-  const rows = file.patch ? file.rows : lazy.rows
-  const showDiff = !!file.patch || lazy.status === 'ready'
+  const full = lazy.status === 'ready'
+  const rows = full ? lazy.rows : file.patch ? file.rows : null
+  const showDiff = full || !!file.patch
 
   return (
     <article className={`card ${viewed ? 'card--viewed' : ''}`} style={style}>
@@ -86,6 +88,7 @@ export default function Card({
         {showDiff ? (
           <DiffBody
             rows={rows}
+            full={full}
             path={file.filename}
             comments={comments}
             threadsByAnchor={threadsByAnchor}

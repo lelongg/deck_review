@@ -422,6 +422,7 @@ em {
   flex: 1;
   min-width: 0;
   display: flex;
+  overflow: hidden;
   font-size: 12px;
   white-space: nowrap;
 }
@@ -552,13 +553,12 @@ em {
 }
 .diff__row {
   display: grid;
-  grid-template-columns: 64px 12px 1fr;
+  grid-template-columns: 34px 1fr;
   align-items: start;
-  column-gap: 4px;
+  column-gap: 8px;
   padding: 1px 8px 1px 0;
 }
-.diff__row--commentable .diff__code,
-.diff__row--commentable .diff__sign {
+.diff__row--commentable .diff__code {
   cursor: pointer;
 }
 .diff__row--add {
@@ -572,33 +572,21 @@ em {
 }
 /* line-number gutter doubles as the range-select handle */
 .diff__gutter {
-  display: grid;
-  grid-template-columns: 28px 28px;
-  column-gap: 4px;
-  touch-action: none;
-  cursor: ns-resize;
-  align-self: stretch;
-}
-.diff__row--commentable .diff__gutter:active {
-  background: var(--amber-glow);
-}
-.diff__ln {
   text-align: right;
   color: var(--ink-faint);
   font-size: 10px;
   padding-top: 1px;
+  touch-action: none;
+  cursor: ns-resize;
+  align-self: stretch;
   user-select: none;
 }
-.diff__sign {
-  text-align: center;
-  user-select: none;
-  font-weight: 700;
+.diff__row--commentable .diff__gutter:active {
+  background: var(--amber-glow);
 }
-.diff__row--add .diff__sign,
 .diff__row--add .diff__code {
   color: var(--add);
 }
-.diff__row--del .diff__sign,
 .diff__row--del .diff__code {
   color: var(--del);
 }
@@ -614,7 +602,7 @@ em {
    the inline notes/composer — which share each row's wrapper — keep the same
    width as in wrap mode. */
 .diff--nowrap .diff__row {
-  grid-template-columns: 64px 12px max-content;
+  grid-template-columns: 34px max-content;
   width: max-content;
   min-width: 100%;
 }

@@ -20,6 +20,7 @@ function filterRows(rows, view) {
 
 export default function DiffBody({
   rows: allRows,
+  full = false,
   path,
   comments,
   threadsByAnchor,
@@ -168,6 +169,9 @@ export default function DiffBody({
     >
       {rows.map((row, idx) => {
         if (row.type === 'hunk') {
+          // In full-file view there's a single all-encompassing hunk; its
+          // header is just noise, so hide it.
+          if (full) return null
           return (
             <div key={row.id} className="diff__hunk">
               {row.content}
@@ -209,18 +213,7 @@ export default function DiffBody({
                 onPointerUp={commentable ? onGutterUp : undefined}
                 onPointerCancel={commentable ? onGutterUp : undefined}
               >
-                <span className="diff__ln diff__ln--old">
-                  {row.oldLine ?? ''}
-                </span>
-                <span className="diff__ln diff__ln--new">
-                  {row.newLine ?? ''}
-                </span>
-              </span>
-              <span
-                className="diff__sign"
-                onClick={commentable ? () => openSingle(idx) : undefined}
-              >
-                {row.type === 'add' ? '+' : row.type === 'del' ? '−' : ' '}
+                {row.newLine ?? row.oldLine ?? ''}
               </span>
               <span
                 className="diff__code"
