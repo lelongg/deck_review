@@ -68,6 +68,7 @@ nix develop        # drops you in with node 22 + npm
 
 - [x] Card-swipe deck, hand-written parser, viewed-tracking, batched review POST
 - [x] GraphQL viewed-state sync (mirrors the web UI's checkboxes across devices)
-- [ ] PWA (manifest + service worker via `vite-plugin-pwa`) for offline + "Add
-      to Home Screen" — needs a dependency beyond React
-- [ ] Line-range comments (tap-and-drag) and OAuth device flow instead of a PAT
+- [x] PWA — installable + offline app shell via `vite-plugin-pwa` ("Add to Home
+      Screen" launches standalone)
+- [x] Line-range comments — drag the line-number gutter to select a span
+- [ ] OAuth device flow instead of a pasted PAT
