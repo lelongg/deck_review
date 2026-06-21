@@ -48,6 +48,7 @@ export async function fetchPullRequest(token, { owner, repo, number }) {
     state: pr.state,
     draft: pr.draft,
     headSha: pr.head?.sha,
+    baseSha: pr.base?.sha,
     baseRef: pr.base?.ref,
     headRef: pr.head?.ref,
     author: pr.user?.login,
@@ -98,6 +99,19 @@ export async function fetchPullRequestFiles(token, { owner, repo, number }) {
     if (batch.length < 100) break
   }
   return out
+}
+
+// GET a file's raw text at a given ref. Returns null when the file doesn't
+// exist there (404 — e.g. an added or deleted file) and throws on other errors.
+export async function fetchFileText(token, { owner, repo }, path, ref) {
+  const encoded = path.split('/').map(encodeURIComponent).join('/')
+  const res = await fetch(
+    `${API}/repos/${owner}/${repo}/contents/${encoded}?ref=${ref}`,
+    { headers: { ...restHeaders(token), Accept: 'application/vnd.github.raw' } },
+  )
+  if (res.status === 404) return null
+  if (!res.ok) throw await toError(res)
+  return res.text()
 }
 
 // POST /repos/{owner}/{repo}/pulls/{n}/comments — post ONE inline review

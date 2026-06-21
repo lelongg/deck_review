@@ -404,6 +404,10 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         active={active}
         onNext={next}
         onPrev={prev}
+        token={token}
+        prRef={prRef}
+        baseSha={meta?.baseSha}
+        headSha={meta?.headSha}
         viewedApi={viewedApi}
         onToggleViewed={toggleViewed}
         commentsByPath={commentsApi.byPath}
@@ -520,6 +524,10 @@ function CardStack({
   active,
   onNext,
   onPrev,
+  token,
+  prRef,
+  baseSha,
+  headSha,
   viewedApi,
   onToggleViewed,
   commentsByPath,
@@ -604,6 +612,10 @@ function CardStack({
         index={active}
         total={files.length}
         dragX={drag}
+        token={token}
+        prRef={prRef}
+        baseSha={baseSha}
+        headSha={headSha}
         viewed={viewedApi.isViewed(file.filename)}
         comments={commentsByPath.get(file.filename) || []}
         threadsByAnchor={threadsByAnchor}

@@ -1,4 +1,5 @@
 import DiffBody from './DiffBody.jsx'
+import { useFileDiff } from '../lib/fileDiff.js'
 
 const STATUS_LABEL = {
   added: 'new',
@@ -15,6 +16,10 @@ export default function Card({
   index,
   total,
   dragX,
+  token,
+  prRef,
+  baseSha,
+  headSha,
   viewed,
   comments,
   threadsByAnchor,
@@ -40,6 +45,12 @@ export default function Card({
     : undefined
 
   const { dir, base } = splitPath(file.filename)
+
+  // When GitHub gave us no patch (large file / oversized PR diff), rebuild it
+  // from the file's blobs on demand.
+  const lazy = useFileDiff(token, prRef, file, baseSha, headSha)
+  const rows = file.patch ? file.rows : lazy.rows
+  const showDiff = !!file.patch || lazy.status === 'ready'
 
   return (
     <article className={`card ${viewed ? 'card--viewed' : ''}`} style={style}>
@@ -72,9 +83,9 @@ export default function Card({
       </header>
 
       <div className={`card__body ${wrap ? '' : 'card__body--scroll-x'}`}>
-        {file.patch ? (
+        {showDiff ? (
           <DiffBody
-            rows={file.rows}
+            rows={rows}
             path={file.filename}
             comments={comments}
             threadsByAnchor={threadsByAnchor}
@@ -90,11 +101,7 @@ export default function Card({
             view={view}
           />
         ) : (
-          <div className="card__nopatch">
-            {file.status === 'removed'
-              ? 'file removed'
-              : 'no inline diff available (binary or too large)'}
-          </div>
+          <div className="card__nopatch">{nopatchMessage(file, lazy.status)}</div>
         )}
       </div>
 
@@ -108,6 +115,15 @@ export default function Card({
       </footer>
     </article>
   )
+}
+
+function nopatchMessage(file, status) {
+  if (status === 'loading') return 'loading diff…'
+  if (status === 'binary') return 'binary file'
+  if (status === 'toolarge') return 'file too large to display'
+  if (status === 'error') return 'couldn’t load this diff'
+  if (file.status === 'removed') return 'file removed'
+  return 'no inline diff available'
 }
 
 function splitPath(filename) {
