@@ -13,8 +13,9 @@ headers, so a browser app with a fine-grained token needs **no backend**.
 
 - **Zero chrome.** The diff is the whole screen. Navigation is a swipe or a
   slide-over file list, never a permanent sidebar.
-- **Reflow, never horizontal-scroll.** Long lines soft-wrap with `+`/`−`
-  markers inline. Tiny dense monospace by design.
+- **Reflow by default.** Long lines soft-wrap with `+`/`−` markers inline —
+  toggle wrap off (top-bar button or `w`) to fall back to horizontal scroll.
+  Tiny dense monospace by design.
 - **Progress survives sessions.** Per-file viewed-state is persisted (keyed by
   PR) and best-effort synced to GitHub's own "Viewed" checkboxes via GraphQL.
 - **Card stack** with subtle depth behind the active card and an amber progress

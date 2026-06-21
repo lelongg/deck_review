@@ -10,6 +10,8 @@ import ProgressGauge from './ProgressGauge.jsx'
 import Card from './Card.jsx'
 import FileList from './FileList.jsx'
 import FinishSheet from './FinishSheet.jsx'
+import { getJSON, setJSON } from '../lib/storage.js'
+import { WRAP_KEY } from '../lib/constants.js'
 
 const SWIPE_THRESHOLD = 60 // px before a horizontal swipe commits
 
@@ -22,6 +24,17 @@ export default function ReviewDeck({ token, prRef, onExit }) {
 
   const [fileListOpen, setFileListOpen] = useState(false)
   const [finishOpen, setFinishOpen] = useState(false)
+
+  // Soft-wrap long diff lines (default) vs. no-wrap + horizontal scroll.
+  // Persisted as a global preference, not per-PR.
+  const [wrap, setWrap] = useState(() => getJSON(WRAP_KEY, true))
+  const toggleWrap = useCallback(() => {
+    setWrap((w) => {
+      const next = !w
+      setJSON(WRAP_KEY, next)
+      return next
+    })
+  }, [])
 
   const viewedApi = useViewed(token, prRef)
   const commentsApi = useComments(prRef)
@@ -72,10 +85,11 @@ export default function ReviewDeck({ token, prRef, onExit }) {
       if (fileListOpen || finishOpen) return
       if (e.key === 'ArrowRight') next()
       else if (e.key === 'ArrowLeft') prev()
+      else if (e.key === 'w' || e.key === 'W') toggleWrap()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [next, prev, fileListOpen, finishOpen])
+  }, [next, prev, fileListOpen, finishOpen, toggleWrap])
 
   const viewedCount = useMemo(
     () => files.filter((f) => viewedApi.isViewed(f.filename)).length,
@@ -143,6 +157,8 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         onFinish={() => setFinishOpen(true)}
         commentCount={commentsApi.comments.length}
         syncing={viewedApi.syncing}
+        wrap={wrap}
+        onToggleWrap={toggleWrap}
       />
 
       <ProgressGauge done={viewedCount} total={total} />
@@ -157,6 +173,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         addComment={commentsApi.addComment}
         removeComment={commentsApi.removeComment}
         onMarkViewed={markViewedAndAdvance}
+        wrap={wrap}
       />
 
       <PositionDots total={total} active={active} />
@@ -194,11 +211,28 @@ export default function ReviewDeck({ token, prRef, onExit }) {
   )
 }
 
-function TopBar({ meta, prRef, onMenu, onFinish, commentCount, syncing }) {
+function TopBar({
+  meta,
+  prRef,
+  onMenu,
+  onFinish,
+  commentCount,
+  syncing,
+  wrap,
+  onToggleWrap,
+}) {
   return (
     <header className="topbar">
       <button className="topbar__menu" onClick={onMenu} aria-label="file list">
         ☰
+      </button>
+      <button
+        className={`topbar__wrap ${wrap ? 'is-on' : ''}`}
+        onClick={onToggleWrap}
+        aria-pressed={wrap}
+        title={`Line wrap: ${wrap ? 'on' : 'off'} (w)`}
+      >
+        {wrap ? '↵' : '→'}
       </button>
       <div className="topbar__title">
         <span className="topbar__slug">
@@ -226,6 +260,7 @@ function CardStack({
   addComment,
   removeComment,
   onMarkViewed,
+  wrap,
 }) {
   const [drag, setDrag] = useState(0) // live horizontal drag offset
   const start = useRef(null)
@@ -285,6 +320,7 @@ function CardStack({
         onRemoveComment={removeComment}
         onToggleViewed={() => viewedApi.toggleViewed(file.filename)}
         onMarkViewed={() => onMarkViewed(file.filename)}
+        wrap={wrap}
       />
     </div>
   )

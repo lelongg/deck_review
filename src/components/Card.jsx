@@ -21,6 +21,7 @@ export default function Card({
   onRemoveComment,
   onToggleViewed,
   onMarkViewed,
+  wrap,
 }) {
   // Pull the active card a little toward the finger; fade slightly as it goes.
   const style = dragX
@@ -63,7 +64,7 @@ export default function Card({
         </div>
       </header>
 
-      <div className="card__body">
+      <div className={`card__body ${wrap ? '' : 'card__body--scroll-x'}`}>
         {file.patch ? (
           <DiffBody
             rows={file.rows}
@@ -71,6 +72,7 @@ export default function Card({
             comments={comments}
             onAddComment={onAddComment}
             onRemoveComment={onRemoveComment}
+            wrap={wrap}
           />
         ) : (
           <div className="card__nopatch">

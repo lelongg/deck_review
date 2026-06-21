@@ -14,6 +14,7 @@ export default function DiffBody({
   comments,
   onAddComment,
   onRemoveComment,
+  wrap = true,
 }) {
   // composer: null | { kind:'single'|'range', anchorIdx, top, bottom }
   const [composer, setComposer] = useState(null)
@@ -119,7 +120,7 @@ export default function DiffBody({
   }
 
   return (
-    <div className="diff">
+    <div className={`diff ${wrap ? '' : 'diff--nowrap'}`}>
       {rows.map((row, idx) => {
         if (row.type === 'hunk') {
           return (
