@@ -410,6 +410,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         threadsByAnchor={threadsApi.byAnchor}
         serverCommentIds={threadsApi.ids}
         onReply={threadsApi.reply}
+        onResolveThread={threadsApi.resolveThread}
         expandedThreads={threadsApi.expanded}
         onToggleThread={threadsApi.toggleThread}
         unseenThreads={threadsApi.unseen}
@@ -525,6 +526,7 @@ function CardStack({
   threadsByAnchor,
   serverCommentIds,
   onReply,
+  onResolveThread,
   expandedThreads,
   onToggleThread,
   unseenThreads,
@@ -607,6 +609,7 @@ function CardStack({
         threadsByAnchor={threadsByAnchor}
         serverCommentIds={serverCommentIds}
         onReply={onReply}
+        onResolveThread={onResolveThread}
         expandedThreads={expandedThreads}
         onToggleThread={onToggleThread}
         unseenThreads={unseenThreads}

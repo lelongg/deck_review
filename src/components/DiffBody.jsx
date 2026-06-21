@@ -25,6 +25,7 @@ export default function DiffBody({
   threadsByAnchor,
   serverCommentIds,
   onReply,
+  onResolveThread,
   expandedThreads,
   onToggleThread,
   unseenThreads,
@@ -237,6 +238,7 @@ export default function DiffBody({
                 onReply={onReply}
                 expanded={!!expandedThreads?.has(t.rootId)}
                 onToggle={() => onToggleThread(t.rootId)}
+                onResolve={() => onResolveThread(t.threadId)}
                 unseen={unseenThreads?.get(t.rootId) || 0}
               />
             ))}
@@ -284,7 +286,7 @@ function composerLabel(composer) {
 
 // An existing review-comment thread (root + replies) shown inline, with a
 // reply box that posts into the thread.
-function Thread({ thread, onReply, expanded, onToggle, unseen }) {
+function Thread({ thread, onReply, onResolve, expanded, onToggle, unseen }) {
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const [posting, setPosting] = useState(false)
@@ -311,22 +313,27 @@ function Thread({ thread, onReply, expanded, onToggle, unseen }) {
 
   return (
     <div className="thread">
-      <button
-        className="thread__head"
-        onClick={onToggle}
-        aria-expanded={expanded}
-      >
-        <span className="thread__chev">{expanded ? '▾' : '▸'}</span>
-        <span className="thread__author">{rootAuthor}</span>
-        <span className="thread__meta">
-          {count} comment{count > 1 ? 's' : ''}
-        </span>
-        {unseen > 0 && (
-          <span className="thread__badge">
-            {unseen} new
+      <div className="thread__head">
+        <button
+          className="thread__toggle"
+          onClick={onToggle}
+          aria-expanded={expanded}
+        >
+          <span className="thread__chev">{expanded ? '▾' : '▸'}</span>
+          <span className="thread__author">{rootAuthor}</span>
+          <span className="thread__meta">
+            {count} comment{count > 1 ? 's' : ''}
           </span>
-        )}
-      </button>
+          {unseen > 0 && <span className="thread__badge">{unseen} new</span>}
+        </button>
+        <button
+          className="thread__resolve"
+          onClick={onResolve}
+          title="Resolve conversation"
+        >
+          ✓ resolve
+        </button>
+      </div>
 
       {expanded && (
         <>

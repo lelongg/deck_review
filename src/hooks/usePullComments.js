@@ -1,71 +1,66 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  fetchPullRequestComments,
+  fetchReviewThreads,
   createCommentReply,
+  resolveReviewThread,
 } from '../lib/github.js'
 import { commentKey } from '../lib/parseDiff.js'
 import { getJSON, setJSON } from '../lib/storage.js'
 
-// Group a flat list of review comments into threads. A thread is a root
-// comment plus its replies (in_reply_to_id chains resolved to the root), and
-// is anchored on the diff by the root's (path, side, line).
-function buildThreads(comments) {
-  const byId = new Map(comments.map((c) => [c.id, c]))
-  const rootOf = (c) => {
-    let cur = c
-    const seen = new Set()
-    while (
-      cur.inReplyToId != null &&
-      byId.has(cur.inReplyToId) &&
-      !seen.has(cur.id)
-    ) {
-      seen.add(cur.id)
-      cur = byId.get(cur.inReplyToId)
-    }
-    return cur
-  }
-
-  const groups = new Map()
-  for (const c of comments) {
-    const root = rootOf(c)
-    if (!groups.has(root.id)) groups.set(root.id, { root, comments: [] })
-    groups.get(root.id).comments.push(c)
-  }
-
+// Normalize raw review threads (from GraphQL) into the shape the UI uses:
+// each thread keeps its GraphQL node id (to resolve) and its root comment's
+// REST id (to reply / track seen), and is anchored by the root's location.
+function buildThreads(rawThreads) {
   const threads = []
-  for (const { root, comments: cs } of groups.values()) {
-    cs.sort((a, b) =>
+  for (const rt of rawThreads) {
+    const comments = [...rt.comments].sort((a, b) =>
       a.createdAt < b.createdAt ? -1 : a.createdAt > b.createdAt ? 1 : a.id - b.id,
     )
+    const root = comments[0]
+    if (!root) continue
     threads.push({
       rootId: root.id,
+      threadId: rt.threadId,
+      isResolved: rt.isResolved,
       anchorKey:
         root.line != null ? commentKey(root.path, root.side, root.line) : null,
-      comments: cs,
+      comments,
     })
   }
   return threads
 }
 
-// Existing review-comment threads for one PR, with the ability to reply.
+// Existing review-comment threads for one PR: display (unresolved) inline,
+// reply, resolve, and badge unseen replies.
 export function usePullComments(token, ref) {
   const [threads, setThreads] = useState([])
 
-  // Threads are collapsed by default; we persist the set of expanded ones per
-  // PR so the open/closed state survives reopening cards and reloads.
+  // Threads are collapsed by default; persist the expanded set per PR.
   const openKey = `deck:threadsopen:${ref.owner}/${ref.repo}#${ref.number}`
   const [expanded, setExpanded] = useState(() => new Set(getJSON(openKey, [])))
   useEffect(() => {
     setJSON(openKey, [...expanded])
   }, [openKey, expanded])
 
-  // Per-thread "seen up to" comment id, persisted, so new replies can be
-  // badged. Highest comment id is the newest (GitHub ids are monotonic).
+  // Per-thread "seen up to" comment id, persisted, to badge new replies.
   const seenKey = `deck:threadseen:${ref.owner}/${ref.repo}#${ref.number}`
   const [seen, setSeen] = useState(() => getJSON(seenKey, {}))
   useEffect(() => {
     setJSON(seenKey, seen)
   }, [seenKey, seen])
+
+  const refresh = useCallback(async () => {
+    try {
+      const raw = await fetchReviewThreads(token, ref)
+      setThreads(buildThreads(raw))
+    } catch {
+      /* leave existing threads in place on failure */
+    }
+  }, [token, ref])
+
+  useEffect(() => {
+    refresh()
+  }, [refresh])
 
   const maxIdByRoot = useMemo(() => {
     const m = new Map()
@@ -97,33 +92,10 @@ export function usePullComments(token, ref) {
         else next.add(rootId)
         return next
       })
-      if (opening) markSeen(rootId) // reading it clears its new-reply badge
+      if (opening) markSeen(rootId)
     },
     [expanded, markSeen],
   )
-
-  // rootId -> number of comments newer than what's been seen.
-  const unseen = useMemo(() => {
-    const m = new Map()
-    for (const t of threads) {
-      const base = seen[t.rootId] || 0
-      m.set(t.rootId, t.comments.filter((c) => c.id > base).length)
-    }
-    return m
-  }, [threads, seen])
-
-  const refresh = useCallback(async () => {
-    try {
-      const comments = await fetchPullRequestComments(token, ref)
-      setThreads(buildThreads(comments))
-    } catch {
-      /* leave existing threads in place on failure */
-    }
-  }, [token, ref])
-
-  useEffect(() => {
-    refresh()
-  }, [refresh])
 
   const reply = useCallback(
     async (rootId, body) => {
@@ -137,7 +109,6 @@ export function usePullComments(token, ref) {
                   ...t.comments,
                   {
                     id: created.id,
-                    inReplyToId: created.in_reply_to_id ?? rootId,
                     body: created.body,
                     author: created.user?.login || '',
                     createdAt: created.created_at,
@@ -147,7 +118,6 @@ export function usePullComments(token, ref) {
             : t,
         ),
       )
-      // Your own reply is already "seen".
       setSeen((prev) => ({
         ...prev,
         [rootId]: Math.max(prev[rootId] || 0, created.id),
@@ -156,24 +126,61 @@ export function usePullComments(token, ref) {
     [token, ref],
   )
 
-  // Threads grouped by their anchor (path+side+line) for per-row lookup.
+  // Resolve a thread (optimistically hide it; roll back on failure).
+  const resolveThread = useCallback(
+    async (threadId) => {
+      setThreads((ts) =>
+        ts.map((t) => (t.threadId === threadId ? { ...t, isResolved: true } : t)),
+      )
+      try {
+        await resolveReviewThread(token, threadId, true)
+      } catch {
+        setThreads((ts) =>
+          ts.map((t) =>
+            t.threadId === threadId ? { ...t, isResolved: false } : t,
+          ),
+        )
+      }
+    },
+    [token],
+  )
+
+  // Only unresolved threads are shown, grouped by anchor for per-row lookup.
   const byAnchor = useMemo(() => {
     const map = new Map()
     for (const t of threads) {
-      if (!t.anchorKey) continue
+      if (t.isResolved || !t.anchorKey) continue
       if (!map.has(t.anchorKey)) map.set(t.anchorKey, [])
       map.get(t.anchorKey).push(t)
     }
     return map
   }, [threads])
 
-  // Every server comment id, so locally-posted notes already on the server
-  // aren't shown twice.
+  // Every server comment id (incl. resolved), so locally-posted notes already
+  // on the server aren't shown twice.
   const ids = useMemo(() => {
     const s = new Set()
     for (const t of threads) for (const c of t.comments) s.add(c.id)
     return s
   }, [threads])
 
-  return { byAnchor, ids, reply, refresh, expanded, toggleThread, unseen }
+  const unseen = useMemo(() => {
+    const m = new Map()
+    for (const t of threads) {
+      const base = seen[t.rootId] || 0
+      m.set(t.rootId, t.comments.filter((c) => c.id > base).length)
+    }
+    return m
+  }, [threads, seen])
+
+  return {
+    byAnchor,
+    ids,
+    reply,
+    resolveThread,
+    refresh,
+    expanded,
+    toggleThread,
+    unseen,
+  }
 }

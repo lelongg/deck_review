@@ -286,6 +286,72 @@ export async function fetchPullRequestNodeId(token, { owner, repo, number }) {
   return data?.repository?.pullRequest?.id ?? null
 }
 
+// Read the PR's review threads (inline comment conversations) over GraphQL —
+// this is the only source that exposes each thread's resolved state and node
+// id. Returns normalized threads with REST comment ids (databaseId) so replies
+// and de-duping still work.
+export async function fetchReviewThreads(token, { owner, repo, number }) {
+  const query = `
+    query($owner:String!, $repo:String!, $number:Int!, $cursor:String) {
+      repository(owner:$owner, name:$repo) {
+        pullRequest(number:$number) {
+          reviewThreads(first:50, after:$cursor) {
+            pageInfo { hasNextPage endCursor }
+            nodes {
+              id
+              isResolved
+              comments(first:100) {
+                nodes {
+                  databaseId
+                  body
+                  createdAt
+                  path
+                  line
+                  originalLine
+                  diffSide
+                  author { login }
+                }
+              }
+            }
+          }
+        }
+      }
+    }`
+  const out = []
+  let cursor = null
+  for (;;) {
+    const data = await graphql(token, query, { owner, repo, number, cursor })
+    const conn = data?.repository?.pullRequest?.reviewThreads
+    if (!conn) break
+    for (const node of conn.nodes) {
+      out.push({
+        threadId: node.id,
+        isResolved: node.isResolved,
+        comments: (node.comments?.nodes || []).map((c) => ({
+          id: c.databaseId,
+          path: c.path,
+          side: c.diffSide || 'RIGHT',
+          line: c.line ?? c.originalLine ?? null,
+          body: c.body,
+          author: c.author?.login || '',
+          createdAt: c.createdAt,
+        })),
+      })
+    }
+    if (!conn.pageInfo.hasNextPage) break
+    cursor = conn.pageInfo.endCursor
+  }
+  return out
+}
+
+// resolve / unresolve a review thread by its GraphQL node id.
+export async function resolveReviewThread(token, threadId, resolved = true) {
+  const mutation = resolved
+    ? `mutation($id:ID!){ resolveReviewThread(input:{threadId:$id}){ thread { id } } }`
+    : `mutation($id:ID!){ unresolveReviewThread(input:{threadId:$id}){ thread { id } } }`
+  await graphql(token, mutation, { id: threadId })
+}
+
 // markFileAsViewed / unmarkFileAsViewed mutations take the PR node id + path.
 export async function setFileViewedState(token, pullRequestId, path, viewed) {
   const mutation = viewed
