@@ -221,16 +221,6 @@ export default function Card({
       </div>
 
       <footer className="card__foot">
-        {showDiff && segments.length > 0 && (
-          <button
-            className="card__nav"
-            onClick={() => jumpChange(-1)}
-            aria-label="previous change"
-            title="previous change"
-          >
-            ↑
-          </button>
-        )}
         <button
           className={`btn btn--mark ${viewed ? 'btn--marked' : ''}`}
           onClick={viewed ? onToggleViewed : onMarkViewed}
@@ -238,14 +228,24 @@ export default function Card({
           {viewed ? 'viewed ✓ — unmark' : 'mark viewed'}
         </button>
         {showDiff && segments.length > 0 && (
-          <button
-            className="card__nav"
-            onClick={() => jumpChange(1)}
-            aria-label="next change"
-            title="next change"
-          >
-            ↓
-          </button>
+          <>
+            <button
+              className="card__nav"
+              onClick={() => jumpChange(-1)}
+              aria-label="previous change"
+              title="previous change"
+            >
+              ↑
+            </button>
+            <button
+              className="card__nav"
+              onClick={() => jumpChange(1)}
+              aria-label="next change"
+              title="next change"
+            >
+              ↓
+            </button>
+          </>
         )}
       </footer>
     </article>
