@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.jsx'
+import './pwa.js'
 import './styles.css'
 // Syntax-highlighting palette: github-dark/light supply the --arb-*-dark /
 // --arb-*-light color variables; arborium-tokens maps arborium's <a-*> token
