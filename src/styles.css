@@ -334,6 +334,21 @@ em {
   padding: 0 4px;
 }
 
+/* "PR updated" banner */
+.updatebar {
+  display: block;
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid var(--amber-dim);
+  background: var(--amber-glow);
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 8px 12px;
+  text-align: center;
+}
+
 /* progress gauge */
 .gauge {
   display: flex;

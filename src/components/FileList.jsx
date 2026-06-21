@@ -1,10 +1,12 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { getJSON, setJSON } from '../lib/storage.js'
 
 // Slide-over file tree: jump to any card, see viewed + note state at a glance.
 // Files are grouped into a collapsible folder tree (single-child folder chains
 // are compressed, GitHub-style, into one row).
 export default function FileList({
   files,
+  prRef,
   active,
   isViewed,
   onSetDirViewed,
@@ -13,7 +15,14 @@ export default function FileList({
   onClose,
 }) {
   const tree = useMemo(() => buildTree(files), [files])
-  const [collapsed, setCollapsed] = useState(() => new Set())
+  // Collapsed folders persist per PR (across reopen and refresh).
+  const collapseKey = `deck:collapsed:${prRef.owner}/${prRef.repo}#${prRef.number}`
+  const [collapsed, setCollapsed] = useState(
+    () => new Set(getJSON(collapseKey, [])),
+  )
+  useEffect(() => {
+    setJSON(collapseKey, [...collapsed])
+  }, [collapseKey, collapsed])
   const toggle = (path) =>
     setCollapsed((prev) => {
       const next = new Set(prev)

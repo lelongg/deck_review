@@ -194,8 +194,9 @@ async function graphql(token, query, variables) {
   return json.data
 }
 
-// Read each file's viewerViewedState (VIEWED | DISMISSED | UNVIEWED).
-// Returns a map { filename: true } for files marked VIEWED on the server.
+// Read each file's viewerViewedState. Returns a map { filename: boolean } for
+// ALL files in the PR (true only for VIEWED; UNVIEWED/DISMISSED → false), so
+// callers can honor GitHub clearing the "viewed" flag when a file changes.
 export async function fetchViewedState(token, { owner, repo, number }) {
   const query = `
     query($owner:String!, $repo:String!, $number:Int!, $cursor:String) {
@@ -215,7 +216,7 @@ export async function fetchViewedState(token, { owner, repo, number }) {
     const conn = data?.repository?.pullRequest?.files
     if (!conn) break
     for (const node of conn.nodes) {
-      if (node.viewerViewedState === 'VIEWED') viewed[node.path] = true
+      viewed[node.path] = node.viewerViewedState === 'VIEWED'
     }
     if (!conn.pageInfo.hasNextPage) break
     cursor = conn.pageInfo.endCursor

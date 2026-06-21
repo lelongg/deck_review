@@ -22,31 +22,37 @@ export function useViewed(token, ref) {
     setJSON(storageKey, viewed)
   }, [storageKey, viewed])
 
-  // On mount (per PR), pull the server-side viewed state and merge it in.
-  useEffect(() => {
-    let cancelled = false
-    nodeIdRef.current = null
+  // Pull the server-side viewed state and reconcile. The server is
+  // authoritative: a file it reports as not-viewed (incl. DISMISSED, which is
+  // what GitHub does after the file changes) is unmarked locally, so updated
+  // files reappear as unviewed. Best-effort — stays local-only on failure.
+  const refresh = useCallback(async () => {
     setSyncing(true)
-    ;(async () => {
-      try {
-        const [serverViewed, nodeId] = await Promise.all([
-          fetchViewedState(token, ref),
-          fetchPullRequestNodeId(token, ref),
-        ])
-        if (cancelled) return
-        nodeIdRef.current = nodeId
-        // Server is the source of truth for cross-device state; union it with
-        // any local-only marks the user made offline.
-        setViewed((local) => ({ ...local, ...serverViewed }))
-      } catch {
-        /* GraphQL unavailable for this token — stay local-only. */
-      } finally {
-        if (!cancelled) setSyncing(false)
-      }
-    })()
-    return () => {
-      cancelled = true
+    try {
+      const [serverViewed, nodeId] = await Promise.all([
+        fetchViewedState(token, ref),
+        fetchPullRequestNodeId(token, ref),
+      ])
+      nodeIdRef.current = nodeId
+      setViewed((local) => {
+        const next = { ...local }
+        for (const [path, isViewedOnServer] of Object.entries(serverViewed)) {
+          if (isViewedOnServer) next[path] = true
+          else delete next[path]
+        }
+        return next
+      })
+    } catch {
+      /* GraphQL unavailable for this token — stay local-only. */
+    } finally {
+      setSyncing(false)
     }
+  }, [token, ref])
+
+  // On mount (per PR), sync from the server.
+  useEffect(() => {
+    nodeIdRef.current = null
+    refresh()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey])
 
@@ -74,5 +80,5 @@ export function useViewed(token, ref) {
     [viewed, setFileViewed],
   )
 
-  return { viewed, isViewed, setFileViewed, toggleViewed, syncing }
+  return { viewed, isViewed, setFileViewed, toggleViewed, syncing, refresh }
 }

@@ -13,7 +13,7 @@ import ProgressGauge from './ProgressGauge.jsx'
 import Card from './Card.jsx'
 import FileList from './FileList.jsx'
 import FinishSheet from './FinishSheet.jsx'
-import { getJSON, setJSON } from '../lib/storage.js'
+import { getItem, setItem, getJSON, setJSON } from '../lib/storage.js'
 import { WRAP_KEY, VIEW_KEY } from '../lib/constants.js'
 
 // Cycle order + button labels for the diff-side control.
@@ -96,38 +96,86 @@ export default function ReviewDeck({ token, prRef, onExit }) {
   )
 
   // --- load PR meta + files ---------------------------------------------------
+  const [updateAvailable, setUpdateAvailable] = useState(false)
+  const [reloading, setReloading] = useState(false)
+  const { refresh: refreshViewed } = viewedApi
+
+  // Fetch + parse the deck (meta, files, diff). The files endpoint omits
+  // `patch` for large files / large PRs, so we fill gaps from the full diff.
+  const fetchDeck = useCallback(async () => {
+    const [m, rawFiles, diffText] = await Promise.all([
+      fetchPullRequest(token, prRef),
+      fetchPullRequestFiles(token, prRef),
+      fetchPullRequestDiff(token, prRef),
+    ])
+    const diffMap = splitUnifiedDiff(diffText)
+    const parsed = rawFiles.map((f) => {
+      const patch = f.patch || diffMap.get(f.filename) || null
+      return { ...f, patch, rows: parsePatch(patch) }
+    })
+    return { meta: m, files: parsed }
+  }, [token, prRef])
+
   useEffect(() => {
     let cancelled = false
     setStatus('loading')
     setError('')
-    ;(async () => {
-      try {
-        const [m, rawFiles, diffText] = await Promise.all([
-          fetchPullRequest(token, prRef),
-          fetchPullRequestFiles(token, prRef),
-          fetchPullRequestDiff(token, prRef),
-        ])
+    fetchDeck()
+      .then(({ meta: m, files: parsed }) => {
         if (cancelled) return
-        // The files endpoint omits `patch` for large files / large PRs; fill
-        // those from the full unified diff so they still render inline.
-        const diffMap = splitUnifiedDiff(diffText)
-        const parsed = rawFiles.map((f) => {
-          const patch = f.patch || diffMap.get(f.filename) || null
-          return { ...f, patch, rows: parsePatch(patch) }
-        })
         setMeta(m)
         setFiles(parsed)
         setStatus('ready')
-      } catch (err) {
+      })
+      .catch((err) => {
         if (cancelled) return
         setError(err.message || 'Failed to load pull request.')
         setStatus('error')
-      }
-    })()
+      })
     return () => {
       cancelled = true
     }
-  }, [token, prRef])
+  }, [fetchDeck])
+
+  // Pull the latest diff + files in place (keeps you on the deck), and re-sync
+  // viewed state so files changed by the new push reappear as unviewed.
+  const reload = useCallback(() => {
+    setReloading(true)
+    fetchDeck()
+      .then(({ meta: m, files: parsed }) => {
+        setMeta(m)
+        setFiles(parsed)
+        setUpdateAvailable(false)
+      })
+      .catch(() => {})
+      .finally(() => setReloading(false))
+    refreshViewed()
+  }, [fetchDeck, refreshViewed])
+
+  // Detect new commits: poll the head SHA on an interval and on focus.
+  // (headSha is derived above for comment anchoring.)
+  useEffect(() => {
+    if (status !== 'ready' || !headSha) return
+    let alive = true
+    const check = async () => {
+      try {
+        const m = await fetchPullRequest(token, prRef)
+        if (alive && m.headSha && m.headSha !== headSha) setUpdateAvailable(true)
+      } catch {
+        /* ignore transient failures */
+      }
+    }
+    const id = setInterval(check, 60 * 1000)
+    const onVis = () => {
+      if (document.visibilityState === 'visible') check()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    return () => {
+      alive = false
+      clearInterval(id)
+      document.removeEventListener('visibilitychange', onVis)
+    }
+  }, [status, token, prRef, headSha])
 
   const total = files.length
 
@@ -159,14 +207,24 @@ export default function ReviewDeck({ token, prRef, onExit }) {
     if (t !== -1) goTo(t)
   }, [active, findUnviewed, goTo])
 
-  // Start on the first not-yet-viewed file (once, when the deck is ready).
+  // Restore the card you were on across reloads (by filename); otherwise start
+  // on the first not-yet-viewed file. Runs once, when the deck is ready.
+  const activeKey = `deck:active:${prRef.owner}/${prRef.repo}#${prRef.number}`
   const positioned = useRef(false)
   useEffect(() => {
     if (status !== 'ready' || positioned.current || total === 0) return
     positioned.current = true
-    const first = files.findIndex((f) => !viewedApi.isViewed(f.filename))
-    if (first > 0) setActive(first)
-  }, [status, files, total, viewedApi])
+    const savedName = getItem(activeKey)
+    let idx = savedName ? files.findIndex((f) => f.filename === savedName) : -1
+    if (idx === -1) idx = files.findIndex((f) => !viewedApi.isViewed(f.filename))
+    if (idx > 0) setActive(idx)
+  }, [status, files, total, viewedApi, activeKey])
+
+  // Persist the current file so a refresh resumes here.
+  useEffect(() => {
+    const f = files[active]
+    if (f) setItem(activeKey, f.filename)
+  }, [active, files, activeKey])
 
   const viewedCount = useMemo(
     () => files.filter((f) => viewedApi.isViewed(f.filename)).length,
@@ -316,6 +374,14 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         onCycleView={cycleView}
       />
 
+      {updateAvailable && (
+        <button className="updatebar" onClick={reload} disabled={reloading}>
+          {reloading
+            ? 'refreshing…'
+            : 'this PR has new changes — tap to refresh'}
+        </button>
+      )}
+
       <ProgressGauge
         done={viewedCount}
         total={total}
@@ -343,6 +409,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
       {fileListOpen && (
         <FileList
           files={files}
+          prRef={prRef}
           active={active}
           isViewed={viewedApi.isViewed}
           onSetDirViewed={setDirViewed}
