@@ -5,9 +5,13 @@ import { TOKEN_KEY } from '../lib/constants.js'
 
 // Entry screen: paste a fine-grained PAT and a PR URL. Optionally remember the
 // token in localStorage (with a trust warning).
-export default function AuthScreen({ onStart, savedToken }) {
+export default function AuthScreen({ onStart, savedToken, savedRef }) {
   const [token, setToken] = useState(savedToken || '')
-  const [url, setUrl] = useState('')
+  const [url, setUrl] = useState(
+    savedRef
+      ? `github.com/${savedRef.owner}/${savedRef.repo}/pull/${savedRef.number}`
+      : '',
+  )
   const [remember, setRemember] = useState(!!savedToken)
   const [error, setError] = useState('')
 
