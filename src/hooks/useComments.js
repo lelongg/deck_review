@@ -15,18 +15,25 @@ export function useComments(ref) {
     setJSON(storageKey, comments)
   }, [storageKey, comments])
 
-  const addComment = useCallback(({ path, side, line, body }) => {
-    setComments((prev) => [
-      ...prev,
-      {
-        id: `${commentKey(path, side, line)}::${Date.now()}`,
-        path,
-        side,
-        line,
-        body,
-      },
-    ])
-  }, [])
+  const addComment = useCallback(
+    ({ path, side, line, body, startSide, startLine }) => {
+      setComments((prev) => [
+        ...prev,
+        {
+          id: `${commentKey(path, side, line)}::${Date.now()}`,
+          path,
+          side,
+          line,
+          // Multi-line range anchor (optional). Present only when the user
+          // selected more than one line.
+          startSide: startLine != null ? startSide : undefined,
+          startLine: startLine != null ? startLine : undefined,
+          body,
+        },
+      ])
+    },
+    [],
+  )
 
   const removeComment = useCallback((id) => {
     setComments((prev) => prev.filter((c) => c.id !== id))

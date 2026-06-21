@@ -93,12 +93,16 @@ export async function submitReview(
   if (commitId) payload.commit_id = commitId
   if (body) payload.body = body
   if (comments?.length) {
-    payload.comments = comments.map((c) => ({
-      path: c.path,
-      line: c.line,
-      side: c.side,
-      body: c.body,
-    }))
+    payload.comments = comments.map((c) => {
+      const out = { path: c.path, line: c.line, side: c.side, body: c.body }
+      // Multi-line comments: start_line is the first line of the range,
+      // `line` the last. start_side defaults to side when omitted.
+      if (c.startLine != null && c.startLine !== c.line) {
+        out.start_line = c.startLine
+        out.start_side = c.startSide || c.side
+      }
+      return out
+    })
   }
   const res = await fetch(
     `${API}/repos/${owner}/${repo}/pulls/${number}/reviews`,

@@ -485,22 +485,35 @@ em {
 }
 .diff__row {
   display: grid;
-  grid-template-columns: 30px 30px 12px 1fr;
+  grid-template-columns: 64px 12px 1fr;
   align-items: start;
   column-gap: 4px;
   padding: 1px 8px 1px 0;
 }
-.diff__row--commentable {
+.diff__row--commentable .diff__code,
+.diff__row--commentable .diff__sign {
   cursor: pointer;
-}
-.diff__row--commentable:active {
-  background: var(--amber-glow);
 }
 .diff__row--add {
   background: var(--add-bg);
 }
 .diff__row--del {
   background: var(--del-bg);
+}
+.diff__row--selected {
+  background: var(--amber-glow);
+}
+/* line-number gutter doubles as the range-select handle */
+.diff__gutter {
+  display: grid;
+  grid-template-columns: 28px 28px;
+  column-gap: 4px;
+  touch-action: none;
+  cursor: ns-resize;
+  align-self: stretch;
+}
+.diff__row--commentable .diff__gutter:active {
+  background: var(--amber-glow);
 }
 .diff__ln {
   text-align: right;
