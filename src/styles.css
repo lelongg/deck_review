@@ -508,9 +508,11 @@ em {
 .minimap {
   flex: none;
   position: relative;
-  width: 7px;
+  width: 10px;
   background: var(--bg);
   border-left: 1px solid var(--line-soft);
+  cursor: pointer;
+  touch-action: none;
 }
 .minimap__mark {
   position: absolute;
@@ -518,6 +520,7 @@ em {
   right: 1px;
   border-radius: 1px;
   min-height: 2px;
+  pointer-events: none;
 }
 .minimap__mark--add {
   background: var(--add);

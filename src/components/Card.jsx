@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useRef } from 'react'
 import DiffBody from './DiffBody.jsx'
 import { useFileDiff } from '../lib/fileDiff.js'
 
@@ -81,6 +81,16 @@ export default function Card({
   const showDiff = full || !!file.patch
   const segments = useMemo(() => changeSegments(rows), [rows])
 
+  // Click / drag the minimap to scroll the diff to that fraction of the file.
+  const bodyRef = useRef(null)
+  function scrollToEvent(e) {
+    const body = bodyRef.current
+    if (!body) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const frac = Math.min(1, Math.max(0, (e.clientY - rect.top) / rect.height))
+    body.scrollTop = frac * (body.scrollHeight - body.clientHeight)
+  }
+
   return (
     <article className={`card ${viewed ? 'card--viewed' : ''}`} style={style}>
       <header className="card__head">
@@ -112,7 +122,10 @@ export default function Card({
       </header>
 
       <div className="card__bodywrap">
-        <div className={`card__body ${wrap ? '' : 'card__body--scroll-x'}`}>
+        <div
+          ref={bodyRef}
+          className={`card__body ${wrap ? '' : 'card__body--scroll-x'}`}
+        >
           {showDiff ? (
             <DiffBody
               rows={rows}
@@ -138,7 +151,17 @@ export default function Card({
           )}
         </div>
         {showDiff && segments.length > 0 && (
-          <div className="minimap" aria-hidden>
+          <div
+            className="minimap"
+            aria-hidden
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture?.(e.pointerId)
+              scrollToEvent(e)
+            }}
+            onPointerMove={(e) => {
+              if (e.buttons) scrollToEvent(e)
+            }}
+          >
             {segments.map((s, i) => (
               <span
                 key={i}
