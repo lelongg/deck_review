@@ -173,23 +173,28 @@ export default function ReviewDeck({ token, prRef, onExit }) {
     [files, viewedApi],
   )
 
-  // LIFO history of files marked viewed this session, so the action can be
-  // undone one step at a time. Unmarking a file (manually or via undo) drops it.
+  // LIFO history of mark-viewed actions this session, so they can be undone.
+  // Each entry is a batch of filenames (a single file, or a whole folder), so
+  // one undo reverts one action. Re-marking a file moves it to the newest batch.
   const [viewHistory, setViewHistory] = useState([])
-  const pushHistory = useCallback(
-    (filename) =>
-      setViewHistory((h) => [...h.filter((f) => f !== filename), filename]),
-    [],
-  )
-  const dropHistory = useCallback(
-    (filename) => setViewHistory((h) => h.filter((f) => f !== filename)),
-    [],
-  )
+  const recordViewed = useCallback((names) => {
+    const set = new Set(names)
+    setViewHistory((h) => [
+      ...h.map((b) => b.filter((f) => !set.has(f))).filter((b) => b.length),
+      names,
+    ])
+  }, [])
+  const forgetViewed = useCallback((names) => {
+    const set = new Set(names)
+    setViewHistory((h) =>
+      h.map((b) => b.filter((f) => !set.has(f))).filter((b) => b.length),
+    )
+  }, [])
 
   const markViewedAndAdvance = useCallback(
     (filename) => {
       viewedApi.setFileViewed(filename, true)
-      pushHistory(filename)
+      recordViewed([filename])
       // auto-advance to the next not-yet-viewed card, else just next.
       const fromIndex = files.findIndex((f) => f.filename === filename)
       let target = -1
@@ -209,7 +214,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
       }
       goTo(target === -1 ? fromIndex + 1 : target)
     },
-    [files, viewedApi, goTo, pushHistory],
+    [files, viewedApi, goTo, recordViewed],
   )
 
   // Manual toggle from the card footer; keeps the undo history in sync.
@@ -217,19 +222,30 @@ export default function ReviewDeck({ token, prRef, onExit }) {
     (filename) => {
       const willView = !viewedApi.isViewed(filename)
       viewedApi.setFileViewed(filename, willView)
-      if (willView) pushHistory(filename)
-      else dropHistory(filename)
+      if (willView) recordViewed([filename])
+      else forgetViewed([filename])
     },
-    [viewedApi, pushHistory, dropHistory],
+    [viewedApi, recordViewed, forgetViewed],
   )
 
-  // Undo the most recent mark-viewed: unmark it and jump back to that card.
+  // Mark (or unmark) every file in a folder at once, from the file tree.
+  const setDirViewed = useCallback(
+    (filenames, value) => {
+      filenames.forEach((f) => viewedApi.setFileViewed(f, value))
+      if (value) recordViewed(filenames)
+      else forgetViewed(filenames)
+    },
+    [viewedApi, recordViewed, forgetViewed],
+  )
+
+  // Undo the most recent mark-viewed action: unmark the whole batch and jump
+  // back to its first file.
   const undoViewed = useCallback(() => {
     if (viewHistory.length === 0) return
-    const filename = viewHistory[viewHistory.length - 1]
-    viewedApi.setFileViewed(filename, false)
+    const batch = viewHistory[viewHistory.length - 1]
+    batch.forEach((f) => viewedApi.setFileViewed(f, false))
     setViewHistory((h) => h.slice(0, -1))
-    const idx = files.findIndex((f) => f.filename === filename)
+    const idx = files.findIndex((f) => f.filename === batch[0])
     if (idx !== -1) goTo(idx)
   }, [viewHistory, viewedApi, files, goTo])
 
@@ -329,6 +345,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
           files={files}
           active={active}
           isViewed={viewedApi.isViewed}
+          onSetDirViewed={setDirViewed}
           commentsByPath={commentsApi.byPath}
           onPick={(i) => {
             goTo(i)

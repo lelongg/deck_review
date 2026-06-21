@@ -867,7 +867,15 @@ em {
   color: var(--amber);
 }
 .filelist__dir {
-  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 4px;
+  border-radius: 7px;
+}
+.filelist__dirtoggle {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 7px;
@@ -875,10 +883,21 @@ em {
   border: none;
   color: var(--ink-dim);
   text-align: left;
-  padding: 7px 8px;
-  border-radius: 7px;
+  padding: 7px 0;
   font-size: 11px;
   letter-spacing: 0.02em;
+}
+.filelist__dircheck {
+  flex: none;
+  background: none;
+  border: none;
+  color: var(--ink-faint);
+  font-size: 12px;
+  line-height: 1;
+  padding: 5px 7px;
+}
+.filelist__dircheck.is-on {
+  color: var(--amber);
 }
 .filelist__chev {
   flex: none;

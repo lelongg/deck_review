@@ -7,6 +7,7 @@ export default function FileList({
   files,
   active,
   isViewed,
+  onSetDirViewed,
   commentsByPath,
   onPick,
   onClose,
@@ -21,7 +22,15 @@ export default function FileList({
       return next
     })
 
-  const shared = { active, isViewed, commentsByPath, onPick, collapsed, toggle }
+  const shared = {
+    active,
+    isViewed,
+    onSetDirViewed,
+    commentsByPath,
+    onPick,
+    collapsed,
+    toggle,
+  }
 
   return (
     <div className="sheet" onClick={onClose}>
@@ -79,6 +88,13 @@ function TreeLevel({ node, basePath, depth, ...rest }) {
   )
 }
 
+// Gather every filename under a tree node (across all nested folders).
+function collectFilenames(node) {
+  const out = node.files.map((leaf) => leaf.file.filename)
+  for (const [, child] of node.dirs) out.push(...collectFilenames(child))
+  return out
+}
+
 function DirNode({ name, node, basePath, depth, ...rest }) {
   // Compress single-child folder chains (src/components/foo → one row).
   let label = name
@@ -91,16 +107,31 @@ function DirNode({ name, node, basePath, depth, ...rest }) {
     cur = childNode
   }
   const open = !rest.collapsed.has(path)
+
+  const filenames = useMemo(() => collectFilenames(cur), [cur])
+  const viewedN = filenames.filter((f) => rest.isViewed(f)).length
+  const allViewed = filenames.length > 0 && viewedN === filenames.length
+  const someViewed = viewedN > 0
+
   return (
     <>
-      <button
-        className="filelist__dir"
-        style={{ paddingLeft: 8 + depth * 14 }}
-        onClick={() => rest.toggle(path)}
-      >
-        <span className="filelist__chev">{open ? '▾' : '▸'}</span>
-        <span className="filelist__dirname">{label}/</span>
-      </button>
+      <div className="filelist__dir" style={{ paddingLeft: 8 + depth * 14 }}>
+        <button
+          className="filelist__dirtoggle"
+          onClick={() => rest.toggle(path)}
+        >
+          <span className="filelist__chev">{open ? '▾' : '▸'}</span>
+          <span className="filelist__dirname">{label}/</span>
+        </button>
+        <button
+          className={`filelist__dircheck ${allViewed ? 'is-on' : ''}`}
+          onClick={() => rest.onSetDirViewed(filenames, !allViewed)}
+          title={allViewed ? 'unmark folder' : 'mark folder viewed'}
+          aria-label={allViewed ? 'unmark folder' : 'mark folder viewed'}
+        >
+          {allViewed ? '✓' : someViewed ? '◐' : '○'}
+        </button>
+      </div>
       {open && (
         <TreeLevel node={cur} basePath={path} depth={depth + 1} {...rest} />
       )}
