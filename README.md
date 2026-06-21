@@ -21,8 +21,9 @@ headers, so a browser app with a fine-grained token needs **no backend**.
 - **Card stack** with subtle depth behind the active card and an amber progress
   gauge that fills as files are cleared. Honors `prefers-reduced-motion`.
 
-Aesthetic: dark instrument/console feel — deep blue-slate ground, sodium-amber
+Aesthetic: instrument/console feel — deep blue-slate ground, sodium-amber
 accent (`#f2a900`), muted diff colors (`#7fd28c` / `#f08a8a`), mostly-monospace.
+Adapts to the OS light/dark setting (`prefers-color-scheme`); no in-app toggle.
 
 ## Use
 

@@ -1,7 +1,7 @@
-/* Generated from @arborium/arborium base.css (prefers-color-scheme: dark block).
-   Maps arborium token elements <a-*> to the github-dark palette, scoped to
-   .diff and applied unconditionally — the app UI is always dark regardless
-   of the system color scheme. Regenerate if the arborium version changes. */
+/* Generated from @arborium/arborium base.css. Maps arborium token elements
+   <a-*> to the github palette, scoped to .diff. Dark by default (the app is
+   dark unless the OS prefers light), light under prefers-color-scheme: light.
+   Regenerate if the arborium version changes. */
 .diff a-at { color: var(--arb-at-dark); font-weight: var(--arb-at-dark-weight, normal); font-style: var(--arb-at-dark-style, normal); text-decoration: var(--arb-at-dark-decoration, none); }
 .diff a-co { color: var(--arb-co-dark); font-weight: var(--arb-co-dark-weight, normal); font-style: var(--arb-co-dark-style, normal); text-decoration: var(--arb-co-dark-decoration, none); }
 .diff a-cb { color: var(--arb-cb-dark); font-weight: var(--arb-cb-dark-weight, normal); font-style: var(--arb-cb-dark-style, normal); text-decoration: var(--arb-cb-dark-decoration, none); }
@@ -71,3 +71,75 @@
 .diff a-km { color: var(--arb-km-dark); font-weight: var(--arb-km-dark-weight, normal); font-style: var(--arb-km-dark-style, normal); text-decoration: var(--arb-km-dark-decoration, none); }
 .diff a-dr { color: var(--arb-dr-dark); font-weight: var(--arb-dr-dark-weight, normal); font-style: var(--arb-dr-dark-style, normal); text-decoration: var(--arb-dr-dark-decoration, none); }
 .diff a-rx { color: var(--arb-rx-dark); font-weight: var(--arb-rx-dark-weight, normal); font-style: var(--arb-rx-dark-style, normal); text-decoration: var(--arb-rx-dark-decoration, none); }
+
+@media (prefers-color-scheme: light) {
+  .diff a-at { color: var(--arb-at-light); font-weight: var(--arb-at-light-weight, normal); font-style: var(--arb-at-light-style, normal); text-decoration: var(--arb-at-light-decoration, none); }
+  .diff a-co { color: var(--arb-co-light); font-weight: var(--arb-co-light-weight, normal); font-style: var(--arb-co-light-style, normal); text-decoration: var(--arb-co-light-decoration, none); }
+  .diff a-cb { color: var(--arb-cb-light); font-weight: var(--arb-cb-light-weight, normal); font-style: var(--arb-cb-light-style, normal); text-decoration: var(--arb-cb-light-decoration, none); }
+  .diff a-cr { color: var(--arb-cr-light); font-weight: var(--arb-cr-light-weight, normal); font-style: var(--arb-cr-light-style, normal); text-decoration: var(--arb-cr-light-decoration, none); }
+  .diff a-fb { color: var(--arb-fb-light); font-weight: var(--arb-fb-light-weight, normal); font-style: var(--arb-fb-light-style, normal); text-decoration: var(--arb-fb-light-decoration, none); }
+  .diff a-f { color: var(--arb-f-light); font-weight: var(--arb-f-light-weight, normal); font-style: var(--arb-f-light-style, normal); text-decoration: var(--arb-f-light-decoration, none); }
+  .diff a-fm { color: var(--arb-fm-light); font-weight: var(--arb-fm-light-weight, normal); font-style: var(--arb-fm-light-style, normal); text-decoration: var(--arb-fm-light-decoration, none); }
+  .diff a-k { color: var(--arb-k-light); font-weight: var(--arb-k-light-weight, normal); font-style: var(--arb-k-light-style, normal); text-decoration: var(--arb-k-light-decoration, none); }
+  .diff a-kc { color: var(--arb-kc-light); font-weight: var(--arb-kc-light-weight, normal); font-style: var(--arb-kc-light-style, normal); text-decoration: var(--arb-kc-light-decoration, none); }
+  .diff a-ko { color: var(--arb-ko-light); font-weight: var(--arb-ko-light-weight, normal); font-style: var(--arb-ko-light-style, normal); text-decoration: var(--arb-ko-light-decoration, none); }
+  .diff a-kd { color: var(--arb-kd-light); font-weight: var(--arb-kd-light-weight, normal); font-style: var(--arb-kd-light-style, normal); text-decoration: var(--arb-kd-light-decoration, none); }
+  .diff a-ke { color: var(--arb-ke-light); font-weight: var(--arb-ke-light-weight, normal); font-style: var(--arb-ke-light-style, normal); text-decoration: var(--arb-ke-light-decoration, none); }
+  .diff a-kf { color: var(--arb-kf-light); font-weight: var(--arb-kf-light-weight, normal); font-style: var(--arb-kf-light-style, normal); text-decoration: var(--arb-kf-light-decoration, none); }
+  .diff a-ki { color: var(--arb-ki-light); font-weight: var(--arb-ki-light-weight, normal); font-style: var(--arb-ki-light-style, normal); text-decoration: var(--arb-ki-light-decoration, none); }
+  .diff a-kp { color: var(--arb-kp-light); font-weight: var(--arb-kp-light-weight, normal); font-style: var(--arb-kp-light-style, normal); text-decoration: var(--arb-kp-light-decoration, none); }
+  .diff a-kr { color: var(--arb-kr-light); font-weight: var(--arb-kr-light-weight, normal); font-style: var(--arb-kr-light-style, normal); text-decoration: var(--arb-kr-light-decoration, none); }
+  .diff a-kt { color: var(--arb-kt-light); font-weight: var(--arb-kt-light-weight, normal); font-style: var(--arb-kt-light-style, normal); text-decoration: var(--arb-kt-light-decoration, none); }
+  .diff a-ky { color: var(--arb-ky-light); font-weight: var(--arb-ky-light-weight, normal); font-style: var(--arb-ky-light-style, normal); text-decoration: var(--arb-ky-light-decoration, none); }
+  .diff a-o { color: var(--arb-o-light); font-weight: var(--arb-o-light-weight, normal); font-style: var(--arb-o-light-style, normal); text-decoration: var(--arb-o-light-decoration, none); }
+  .diff a-pr { color: var(--arb-pr-light); font-weight: var(--arb-pr-light-weight, normal); font-style: var(--arb-pr-light-style, normal); text-decoration: var(--arb-pr-light-decoration, none); }
+  .diff a-p { color: var(--arb-p-light); font-weight: var(--arb-p-light-weight, normal); font-style: var(--arb-p-light-style, normal); text-decoration: var(--arb-p-light-decoration, none); }
+  .diff a-pb { color: var(--arb-pb-light); font-weight: var(--arb-pb-light-weight, normal); font-style: var(--arb-pb-light-style, normal); text-decoration: var(--arb-pb-light-decoration, none); }
+  .diff a-pd { color: var(--arb-pd-light); font-weight: var(--arb-pd-light-weight, normal); font-style: var(--arb-pd-light-style, normal); text-decoration: var(--arb-pd-light-decoration, none); }
+  .diff a-ps { color: var(--arb-ps-light); font-weight: var(--arb-ps-light-weight, normal); font-style: var(--arb-ps-light-style, normal); text-decoration: var(--arb-ps-light-decoration, none); }
+  .diff a-s { color: var(--arb-s-light); font-weight: var(--arb-s-light-weight, normal); font-style: var(--arb-s-light-style, normal); text-decoration: var(--arb-s-light-decoration, none); }
+  .diff a-ss { color: var(--arb-ss-light); font-weight: var(--arb-ss-light-weight, normal); font-style: var(--arb-ss-light-style, normal); text-decoration: var(--arb-ss-light-decoration, none); }
+  .diff a-tg { color: var(--arb-tg-light); font-weight: var(--arb-tg-light-weight, normal); font-style: var(--arb-tg-light-style, normal); text-decoration: var(--arb-tg-light-decoration, none); }
+  .diff a-td { color: var(--arb-td-light); font-weight: var(--arb-td-light-weight, normal); font-style: var(--arb-td-light-style, normal); text-decoration: var(--arb-td-light-decoration, none); }
+  .diff a-te { color: var(--arb-te-light); font-weight: var(--arb-te-light-weight, normal); font-style: var(--arb-te-light-style, normal); text-decoration: var(--arb-te-light-decoration, none); }
+  .diff a-t { color: var(--arb-t-light); font-weight: var(--arb-t-light-weight, normal); font-style: var(--arb-t-light-style, normal); text-decoration: var(--arb-t-light-decoration, none); }
+  .diff a-tb { color: var(--arb-tb-light); font-weight: var(--arb-tb-light-weight, normal); font-style: var(--arb-tb-light-style, normal); text-decoration: var(--arb-tb-light-decoration, none); }
+  .diff a-tq { color: var(--arb-tq-light); font-weight: var(--arb-tq-light-weight, normal); font-style: var(--arb-tq-light-style, normal); text-decoration: var(--arb-tq-light-decoration, none); }
+  .diff a-v { color: var(--arb-v-light); font-weight: var(--arb-v-light-weight, normal); font-style: var(--arb-v-light-style, normal); text-decoration: var(--arb-v-light-decoration, none); }
+  .diff a-vb { color: var(--arb-vb-light); font-weight: var(--arb-vb-light-weight, normal); font-style: var(--arb-vb-light-style, normal); text-decoration: var(--arb-vb-light-decoration, none); }
+  .diff a-vp { color: var(--arb-vp-light); font-weight: var(--arb-vp-light-weight, normal); font-style: var(--arb-vp-light-style, normal); text-decoration: var(--arb-vp-light-decoration, none); }
+  .diff a-c { color: var(--arb-c-light); font-weight: var(--arb-c-light-weight, normal); font-style: var(--arb-c-light-style, normal); text-decoration: var(--arb-c-light-decoration, none); }
+  .diff a-cd { color: var(--arb-cd-light); font-weight: var(--arb-cd-light-weight, normal); font-style: var(--arb-cd-light-style, normal); text-decoration: var(--arb-cd-light-decoration, none); }
+  .diff a-m { color: var(--arb-m-light); font-weight: var(--arb-m-light-weight, normal); font-style: var(--arb-m-light-style, normal); text-decoration: var(--arb-m-light-decoration, none); }
+  .diff a-l { color: var(--arb-l-light); font-weight: var(--arb-l-light-weight, normal); font-style: var(--arb-l-light-style, normal); text-decoration: var(--arb-l-light-decoration, none); }
+  .diff a-da { color: var(--arb-da-light); font-weight: var(--arb-da-light-weight, normal); font-style: var(--arb-da-light-style, normal); text-decoration: var(--arb-da-light-decoration, none); }
+  .diff a-dd { color: var(--arb-dd-light); font-weight: var(--arb-dd-light-weight, normal); font-style: var(--arb-dd-light-style, normal); text-decoration: var(--arb-dd-light-decoration, none); }
+  .diff a-n { color: var(--arb-n-light); font-weight: var(--arb-n-light-weight, normal); font-style: var(--arb-n-light-style, normal); text-decoration: var(--arb-n-light-decoration, none); }
+  .diff a-tl { color: var(--arb-tl-light); font-weight: var(--arb-tl-light-weight, normal); font-style: var(--arb-tl-light-style, normal); text-decoration: var(--arb-tl-light-decoration, none); }
+  .diff a-em { color: var(--arb-em-light); font-weight: var(--arb-em-light-weight, normal); font-style: var(--arb-em-light-style, normal); text-decoration: var(--arb-em-light-decoration, none); }
+  .diff a-st { color: var(--arb-st-light); font-weight: var(--arb-st-light-weight, normal); font-style: var(--arb-st-light-style, normal); text-decoration: var(--arb-st-light-decoration, none); }
+  .diff a-tu { color: var(--arb-tu-light); font-weight: var(--arb-tu-light-weight, normal); font-style: var(--arb-tu-light-style, normal); text-decoration: var(--arb-tu-light-decoration, none); }
+  .diff a-tr { color: var(--arb-tr-light); font-weight: var(--arb-tr-light-weight, normal); font-style: var(--arb-tr-light-style, normal); text-decoration: var(--arb-tr-light-decoration, none); }
+  .diff a-se { color: var(--arb-se-light); font-weight: var(--arb-se-light-weight, normal); font-style: var(--arb-se-light-style, normal); text-decoration: var(--arb-se-light-decoration, none); }
+  .diff a-tt { color: var(--arb-tt-light); font-weight: var(--arb-tt-light-weight, normal); font-style: var(--arb-tt-light-style, normal); text-decoration: var(--arb-tt-light-decoration, none); }
+  .diff a-tx { color: var(--arb-tx-light); font-weight: var(--arb-tx-light-weight, normal); font-style: var(--arb-tx-light-style, normal); text-decoration: var(--arb-tx-light-decoration, none); }
+  .diff a-sp { color: var(--arb-sp-light); font-weight: var(--arb-sp-light-weight, normal); font-style: var(--arb-sp-light-style, normal); text-decoration: var(--arb-sp-light-decoration, none); }
+  .diff a-eb { color: var(--arb-eb-light); font-weight: var(--arb-eb-light-weight, normal); font-style: var(--arb-eb-light-style, normal); text-decoration: var(--arb-eb-light-decoration, none); }
+  .diff a-er { color: var(--arb-er-light); font-weight: var(--arb-er-light-weight, normal); font-style: var(--arb-er-light-style, normal); text-decoration: var(--arb-er-light-decoration, none); }
+  .diff a-ns { color: var(--arb-ns-light); font-weight: var(--arb-ns-light-weight, normal); font-style: var(--arb-ns-light-style, normal); text-decoration: var(--arb-ns-light-decoration, none); }
+  .diff a-in { color: var(--arb-in-light); font-weight: var(--arb-in-light-weight, normal); font-style: var(--arb-in-light-style, normal); text-decoration: var(--arb-in-light-decoration, none); }
+  .diff a-sc { color: var(--arb-sc-light); font-weight: var(--arb-sc-light-weight, normal); font-style: var(--arb-sc-light-style, normal); text-decoration: var(--arb-sc-light-decoration, none); }
+  .diff a-rp { color: var(--arb-rp-light); font-weight: var(--arb-rp-light-weight, normal); font-style: var(--arb-rp-light-style, normal); text-decoration: var(--arb-rp-light-decoration, none); }
+  .diff a-cn { color: var(--arb-cn-light); font-weight: var(--arb-cn-light-weight, normal); font-style: var(--arb-cn-light-style, normal); text-decoration: var(--arb-cn-light-decoration, none); }
+  .diff a-ex { color: var(--arb-ex-light); font-weight: var(--arb-ex-light-weight, normal); font-style: var(--arb-ex-light-style, normal); text-decoration: var(--arb-ex-light-decoration, none); }
+  .diff a-pp { color: var(--arb-pp-light); font-weight: var(--arb-pp-light-weight, normal); font-style: var(--arb-pp-light-style, normal); text-decoration: var(--arb-pp-light-decoration, none); }
+  .diff a-ch { color: var(--arb-ch-light); font-weight: var(--arb-ch-light-weight, normal); font-style: var(--arb-ch-light-style, normal); text-decoration: var(--arb-ch-light-decoration, none); }
+  .diff a-cs { color: var(--arb-cs-light); font-weight: var(--arb-cs-light-weight, normal); font-style: var(--arb-cs-light-style, normal); text-decoration: var(--arb-cs-light-decoration, none); }
+  .diff a-vm { color: var(--arb-vm-light); font-weight: var(--arb-vm-light-weight, normal); font-style: var(--arb-vm-light-style, normal); text-decoration: var(--arb-vm-light-decoration, none); }
+  .diff a-fd { color: var(--arb-fd-light); font-weight: var(--arb-fd-light-weight, normal); font-style: var(--arb-fd-light-style, normal); text-decoration: var(--arb-fd-light-decoration, none); }
+  .diff a-tf { color: var(--arb-tf-light); font-weight: var(--arb-tf-light-weight, normal); font-style: var(--arb-tf-light-style, normal); text-decoration: var(--arb-tf-light-decoration, none); }
+  .diff a-fc { color: var(--arb-fc-light); font-weight: var(--arb-fc-light-weight, normal); font-style: var(--arb-fc-light-style, normal); text-decoration: var(--arb-fc-light-decoration, none); }
+  .diff a-km { color: var(--arb-km-light); font-weight: var(--arb-km-light-weight, normal); font-style: var(--arb-km-light-style, normal); text-decoration: var(--arb-km-light-decoration, none); }
+  .diff a-dr { color: var(--arb-dr-light); font-weight: var(--arb-dr-light-weight, normal); font-style: var(--arb-dr-light-style, normal); text-decoration: var(--arb-dr-light-decoration, none); }
+  .diff a-rx { color: var(--arb-rx-light); font-weight: var(--arb-rx-light-weight, normal); font-style: var(--arb-rx-light-style, normal); text-decoration: var(--arb-rx-light-decoration, none); }
+}

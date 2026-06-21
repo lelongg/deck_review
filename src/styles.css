@@ -28,6 +28,31 @@
   --r: 10px;
 }
 
+/* Light theme — follows the OS color scheme (no in-app toggle). Same console
+   layout, light ground; amber/diff accents darkened for contrast on white. */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f6f8fa;
+    --bg-raise: #eef1f4;
+    --bg-card: #ffffff;
+    --bg-card-2: #f3f5f8;
+    --line: #d0d7de;
+    --line-soft: #e1e6eb;
+    --ink: #1f2328;
+    --ink-dim: #57606a;
+    --ink-faint: #8c959f;
+
+    --amber: #9a6700;
+    --amber-dim: #b8860b;
+    --amber-glow: rgba(154, 103, 0, 0.14);
+
+    --add: #1a7f37;
+    --add-bg: rgba(26, 127, 55, 0.1);
+    --del: #cf222e;
+    --del-bg: rgba(207, 34, 46, 0.08);
+  }
+}
+
 * {
   box-sizing: border-box;
 }
@@ -818,6 +843,31 @@ em {
 }
 .filelist__notes {
   color: var(--amber);
+}
+.filelist__dir {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  text-align: left;
+  padding: 7px 8px;
+  border-radius: 7px;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+.filelist__chev {
+  flex: none;
+  width: 10px;
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+.filelist__dirname {
+  flex: 1;
+  word-break: break-all;
+  text-transform: none;
 }
 
 .finish {
