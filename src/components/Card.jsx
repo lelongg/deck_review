@@ -1,5 +1,31 @@
+import { useMemo } from 'react'
 import DiffBody from './DiffBody.jsx'
 import { useFileDiff } from '../lib/fileDiff.js'
+
+// Collapse runs of changed rows into segments for the scroll-area minimap,
+// positioned by their fraction through the file.
+function changeSegments(rows) {
+  if (!rows || rows.length === 0) return []
+  const segs = []
+  let cur = null
+  rows.forEach((r, i) => {
+    const type = r.type === 'add' || r.type === 'del' ? r.type : null
+    if (type && cur && cur.type === type && cur.end === i - 1) {
+      cur.end = i
+    } else if (type) {
+      cur = { type, start: i, end: i }
+      segs.push(cur)
+    } else {
+      cur = null
+    }
+  })
+  const n = rows.length
+  return segs.map((s) => ({
+    type: s.type,
+    top: (s.start / n) * 100,
+    height: Math.max(0.5, ((s.end - s.start + 1) / n) * 100),
+  }))
+}
 
 const STATUS_LABEL = {
   added: 'new',
@@ -53,6 +79,7 @@ export default function Card({
   const full = lazy.status === 'ready'
   const rows = full ? lazy.rows : file.patch ? file.rows : null
   const showDiff = full || !!file.patch
+  const segments = useMemo(() => changeSegments(rows), [rows])
 
   return (
     <article className={`card ${viewed ? 'card--viewed' : ''}`} style={style}>
@@ -84,27 +111,42 @@ export default function Card({
         </span>
       </header>
 
-      <div className={`card__body ${wrap ? '' : 'card__body--scroll-x'}`}>
-        {showDiff ? (
-          <DiffBody
-            rows={rows}
-            full={full}
-            path={file.filename}
-            comments={comments}
-            threadsByAnchor={threadsByAnchor}
-            serverCommentIds={serverCommentIds}
-            onReply={onReply}
-            onResolveThread={onResolveThread}
-            expandedThreads={expandedThreads}
-            onToggleThread={onToggleThread}
-            unseenThreads={unseenThreads}
-            onAddComment={onAddComment}
-            onRemoveComment={onRemoveComment}
-            wrap={wrap}
-            view={view}
-          />
-        ) : (
-          <div className="card__nopatch">{nopatchMessage(file, lazy.status)}</div>
+      <div className="card__bodywrap">
+        <div className={`card__body ${wrap ? '' : 'card__body--scroll-x'}`}>
+          {showDiff ? (
+            <DiffBody
+              rows={rows}
+              full={full}
+              path={file.filename}
+              comments={comments}
+              threadsByAnchor={threadsByAnchor}
+              serverCommentIds={serverCommentIds}
+              onReply={onReply}
+              onResolveThread={onResolveThread}
+              expandedThreads={expandedThreads}
+              onToggleThread={onToggleThread}
+              unseenThreads={unseenThreads}
+              onAddComment={onAddComment}
+              onRemoveComment={onRemoveComment}
+              wrap={wrap}
+              view={view}
+            />
+          ) : (
+            <div className="card__nopatch">
+              {nopatchMessage(file, lazy.status)}
+            </div>
+          )}
+        </div>
+        {showDiff && segments.length > 0 && (
+          <div className="minimap" aria-hidden>
+            {segments.map((s, i) => (
+              <span
+                key={i}
+                className={`minimap__mark minimap__mark--${s.type}`}
+                style={{ top: `${s.top}%`, height: `${s.height}%` }}
+              />
+            ))}
+          </div>
         )}
       </div>
 

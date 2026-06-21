@@ -491,11 +491,39 @@ em {
   font-size: 10px;
 }
 
+/* body + change-minimap sit side by side and fill the card's middle */
+.card__bodywrap {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
 .card__body {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
+}
+/* scroll-area minimap: marks where additions/deletions are in the whole file */
+.minimap {
+  flex: none;
+  position: relative;
+  width: 7px;
+  background: var(--bg);
+  border-left: 1px solid var(--line-soft);
+}
+.minimap__mark {
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  border-radius: 1px;
+  min-height: 2px;
+}
+.minimap__mark--add {
+  background: var(--add);
+}
+.minimap__mark--del {
+  background: var(--del);
 }
 /* no-wrap mode: let long diff lines scroll horizontally instead of reflowing */
 .card__body--scroll-x {
