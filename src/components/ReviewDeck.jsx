@@ -10,7 +10,6 @@ import { parsePatch, splitUnifiedDiff } from '../lib/parseDiff.js'
 import { useViewed } from '../hooks/useViewed.js'
 import { useComments } from '../hooks/useComments.js'
 import { usePullComments } from '../hooks/usePullComments.js'
-import ProgressGauge from './ProgressGauge.jsx'
 import Card from './Card.jsx'
 import FileList from './FileList.jsx'
 import FinishSheet from './FinishSheet.jsx'
@@ -376,20 +375,29 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         onToggleWrap={toggleWrap}
         view={view}
         onCycleView={cycleView}
+        canUndo={viewHistory.length > 0}
+        onUndo={undoViewed}
       />
+
+      <div
+        className="progressline"
+        role="progressbar"
+        aria-valuenow={total === 0 ? 0 : Math.round((viewedCount / total) * 100)}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`${viewedCount} of ${total} files cleared`}
+      >
+        <div
+          className="progressline__fill"
+          style={{ width: total === 0 ? '0%' : `${(viewedCount / total) * 100}%` }}
+        />
+      </div>
 
       {updateAvailable && (
         <button className="updatebar" onClick={reload} disabled={reloading}>
           {reloading ? 'refreshing…' : '↻ PR updated — refresh'}
         </button>
       )}
-
-      <ProgressGauge
-        done={viewedCount}
-        total={total}
-        canUndo={viewHistory.length > 0}
-        onUndo={undoViewed}
-      />
 
       <CardStack
         files={files}
@@ -404,6 +412,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         onReply={threadsApi.reply}
         expandedThreads={threadsApi.expanded}
         onToggleThread={threadsApi.toggleThread}
+        unseenThreads={threadsApi.unseen}
         addComment={postComment}
         removeComment={unpostComment}
         onMarkViewed={markViewedAndAdvance}
@@ -456,12 +465,24 @@ function TopBar({
   onToggleWrap,
   view,
   onCycleView,
+  canUndo,
+  onUndo,
 }) {
   return (
     <header className="topbar">
       <button className="topbar__menu" onClick={onMenu} aria-label="file list">
         ☰
       </button>
+      {canUndo && (
+        <button
+          className="topbar__undo"
+          onClick={onUndo}
+          title="Undo last mark viewed (u)"
+          aria-label="undo last mark viewed"
+        >
+          ↶
+        </button>
+      )}
       <button
         className={`topbar__view ${view !== 'unified' ? 'is-on' : ''}`}
         onClick={onCycleView}
@@ -506,6 +527,7 @@ function CardStack({
   onReply,
   expandedThreads,
   onToggleThread,
+  unseenThreads,
   addComment,
   removeComment,
   onMarkViewed,
@@ -587,6 +609,7 @@ function CardStack({
         onReply={onReply}
         expandedThreads={expandedThreads}
         onToggleThread={onToggleThread}
+        unseenThreads={unseenThreads}
         onAddComment={addComment}
         onRemoveComment={removeComment}
         onToggleViewed={() => onToggleViewed(file.filename)}

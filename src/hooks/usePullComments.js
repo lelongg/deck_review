@@ -58,14 +58,59 @@ export function usePullComments(token, ref) {
   useEffect(() => {
     setJSON(openKey, [...expanded])
   }, [openKey, expanded])
-  const toggleThread = useCallback((rootId) => {
-    setExpanded((prev) => {
-      const next = new Set(prev)
-      if (next.has(rootId)) next.delete(rootId)
-      else next.add(rootId)
-      return next
-    })
-  }, [])
+
+  // Per-thread "seen up to" comment id, persisted, so new replies can be
+  // badged. Highest comment id is the newest (GitHub ids are monotonic).
+  const seenKey = `deck:threadseen:${ref.owner}/${ref.repo}#${ref.number}`
+  const [seen, setSeen] = useState(() => getJSON(seenKey, {}))
+  useEffect(() => {
+    setJSON(seenKey, seen)
+  }, [seenKey, seen])
+
+  const maxIdByRoot = useMemo(() => {
+    const m = new Map()
+    for (const t of threads) {
+      let max = 0
+      for (const c of t.comments) if (c.id > max) max = c.id
+      m.set(t.rootId, max)
+    }
+    return m
+  }, [threads])
+
+  const markSeen = useCallback(
+    (rootId) => {
+      const maxId = maxIdByRoot.get(rootId)
+      if (maxId == null) return
+      setSeen((prev) =>
+        (prev[rootId] || 0) >= maxId ? prev : { ...prev, [rootId]: maxId },
+      )
+    },
+    [maxIdByRoot],
+  )
+
+  const toggleThread = useCallback(
+    (rootId) => {
+      const opening = !expanded.has(rootId)
+      setExpanded((prev) => {
+        const next = new Set(prev)
+        if (next.has(rootId)) next.delete(rootId)
+        else next.add(rootId)
+        return next
+      })
+      if (opening) markSeen(rootId) // reading it clears its new-reply badge
+    },
+    [expanded, markSeen],
+  )
+
+  // rootId -> number of comments newer than what's been seen.
+  const unseen = useMemo(() => {
+    const m = new Map()
+    for (const t of threads) {
+      const base = seen[t.rootId] || 0
+      m.set(t.rootId, t.comments.filter((c) => c.id > base).length)
+    }
+    return m
+  }, [threads, seen])
 
   const refresh = useCallback(async () => {
     try {
@@ -102,6 +147,11 @@ export function usePullComments(token, ref) {
             : t,
         ),
       )
+      // Your own reply is already "seen".
+      setSeen((prev) => ({
+        ...prev,
+        [rootId]: Math.max(prev[rootId] || 0, created.id),
+      }))
     },
     [token, ref],
   )
@@ -125,5 +175,5 @@ export function usePullComments(token, ref) {
     return s
   }, [threads])
 
-  return { byAnchor, ids, reply, refresh, expanded, toggleThread }
+  return { byAnchor, ids, reply, refresh, expanded, toggleThread, unseen }
 }

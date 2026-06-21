@@ -259,7 +259,8 @@ em {
   flex: none;
 }
 .topbar__wrap,
-.topbar__view {
+.topbar__view,
+.topbar__undo {
   flex: none;
   background: none;
   border: 1px solid var(--line);
@@ -268,6 +269,10 @@ em {
   font-size: 14px;
   line-height: 1;
   padding: 6px 9px;
+}
+.topbar__undo {
+  border-color: var(--amber-dim);
+  color: var(--amber);
 }
 .topbar__view {
   font-size: 11px;
@@ -349,37 +354,17 @@ em {
 }
 
 /* progress gauge */
-.gauge {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 5px 12px;
-}
-.gauge__undo {
-  flex: none;
-  background: none;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  color: var(--ink-dim);
-  font-size: 13px;
-  line-height: 1;
-  padding: 4px 8px;
-}
-.gauge__track {
-  flex: 1;
-  height: 4px;
+/* thin progress line under the top bar (replaces the gauge row) */
+.progressline {
+  height: 3px;
   background: var(--line);
-  border-radius: 2px;
-  overflow: hidden;
+  flex: none;
 }
-.gauge__fill {
+.progressline__fill {
   height: 100%;
   background: linear-gradient(90deg, var(--amber-dim), var(--amber));
-  box-shadow: 0 0 12px var(--amber-glow);
+  box-shadow: 0 0 10px var(--amber-glow);
   transition: width 0.4s ease;
-}
-.gauge__label {
-  flex: none;
 }
 
 /* ---------- card stack ---------- */
@@ -425,37 +410,38 @@ em {
 }
 
 .card__head {
-  padding: 7px 12px 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--line-soft);
   background: var(--bg-card-2);
 }
-.card__pathwrap {
-  display: flex;
-  flex-direction: column;
-}
+/* path takes the row; the directory ellipsizes so the filename stays visible */
 .card__path {
-  font-size: 12.5px;
-  word-break: break-all;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  font-size: 12px;
+  white-space: nowrap;
 }
 .card__dir {
   color: var(--ink-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 .card__base {
   color: var(--ink);
   font-weight: 600;
-}
-.card__renamed {
-  font-size: 10.5px;
-  color: var(--ink-faint);
-  word-break: break-all;
+  flex: none;
 }
 .card__metarow {
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 9px;
-  margin-top: 7px;
+  gap: 8px;
   font-size: 11px;
-  flex-wrap: wrap;
 }
 .chip {
   text-transform: uppercase;
@@ -675,6 +661,17 @@ em {
 .thread__meta {
   font-size: 10px;
   color: var(--ink-faint);
+}
+.thread__badge {
+  margin-left: auto;
+  flex: none;
+  background: var(--amber);
+  color: #1a1300;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  border-radius: 8px;
+  padding: 1px 6px;
 }
 .thread__comment {
   padding: 5px 0 3px;

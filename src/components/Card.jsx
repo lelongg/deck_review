@@ -22,6 +22,7 @@ export default function Card({
   onReply,
   expandedThreads,
   onToggleThread,
+  unseenThreads,
   onAddComment,
   onRemoveComment,
   onToggleViewed,
@@ -42,32 +43,31 @@ export default function Card({
   return (
     <article className={`card ${viewed ? 'card--viewed' : ''}`} style={style}>
       <header className="card__head">
-        <div className="card__pathwrap">
-          <span className="card__path">
-            {dir && <span className="card__dir">{dir}/</span>}
-            <span className="card__base">{base}</span>
-          </span>
-          {file.previousFilename && (
-            <span className="card__renamed">← {file.previousFilename}</span>
-          )}
-        </div>
+        <span
+          className="card__path"
+          title={
+            file.previousFilename
+              ? `${file.filename} (renamed from ${file.previousFilename})`
+              : file.filename
+          }
+        >
+          {dir && <span className="card__dir">{dir}/</span>}
+          <span className="card__base">{base}</span>
+        </span>
 
-        <div className="card__metarow">
+        <span className="card__metarow">
           <span className={`chip chip--${file.status}`}>
             {STATUS_LABEL[file.status] || file.status}
           </span>
           <span className="card__adds">+{file.additions}</span>
           <span className="card__dels">−{file.deletions}</span>
           {comments.length > 0 && (
-            <span className="card__notes">
-              {comments.length} note{comments.length > 1 ? 's' : ''}
-            </span>
+            <span className="card__notes">●{comments.length}</span>
           )}
-          {viewed && <span className="card__viewedchip">viewed</span>}
           <span className="card__count">
             {index + 1}/{total}
           </span>
-        </div>
+        </span>
       </header>
 
       <div className={`card__body ${wrap ? '' : 'card__body--scroll-x'}`}>
@@ -81,6 +81,7 @@ export default function Card({
             onReply={onReply}
             expandedThreads={expandedThreads}
             onToggleThread={onToggleThread}
+            unseenThreads={unseenThreads}
             onAddComment={onAddComment}
             onRemoveComment={onRemoveComment}
             wrap={wrap}

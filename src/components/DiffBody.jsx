@@ -27,6 +27,7 @@ export default function DiffBody({
   onReply,
   expandedThreads,
   onToggleThread,
+  unseenThreads,
   onAddComment,
   onRemoveComment,
   wrap = true,
@@ -236,6 +237,7 @@ export default function DiffBody({
                 onReply={onReply}
                 expanded={!!expandedThreads?.has(t.rootId)}
                 onToggle={() => onToggleThread(t.rootId)}
+                unseen={unseenThreads?.get(t.rootId) || 0}
               />
             ))}
 
@@ -282,7 +284,7 @@ function composerLabel(composer) {
 
 // An existing review-comment thread (root + replies) shown inline, with a
 // reply box that posts into the thread.
-function Thread({ thread, onReply, expanded, onToggle }) {
+function Thread({ thread, onReply, expanded, onToggle, unseen }) {
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const [posting, setPosting] = useState(false)
@@ -319,6 +321,11 @@ function Thread({ thread, onReply, expanded, onToggle }) {
         <span className="thread__meta">
           {count} comment{count > 1 ? 's' : ''}
         </span>
+        {unseen > 0 && (
+          <span className="thread__badge">
+            {unseen} new
+          </span>
+        )}
       </button>
 
       {expanded && (
