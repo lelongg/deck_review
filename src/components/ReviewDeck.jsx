@@ -117,8 +117,34 @@ export default function ReviewDeck({ token, prRef, onExit }) {
     },
     [total],
   )
-  const next = useCallback(() => goTo(active + 1), [active, goTo])
-  const prev = useCallback(() => goTo(active - 1), [active, goTo])
+  // Navigation skips files already marked viewed — the deck is a queue of what
+  // still needs review. Returns -1 when there's nothing left in that direction.
+  const findUnviewed = useCallback(
+    (from, dir) => {
+      for (let i = from + dir; i >= 0 && i < total; i += dir) {
+        if (!viewedApi.isViewed(files[i].filename)) return i
+      }
+      return -1
+    },
+    [files, total, viewedApi],
+  )
+  const next = useCallback(() => {
+    const t = findUnviewed(active, 1)
+    if (t !== -1) goTo(t)
+  }, [active, findUnviewed, goTo])
+  const prev = useCallback(() => {
+    const t = findUnviewed(active, -1)
+    if (t !== -1) goTo(t)
+  }, [active, findUnviewed, goTo])
+
+  // Start on the first not-yet-viewed file (once, when the deck is ready).
+  const positioned = useRef(false)
+  useEffect(() => {
+    if (status !== 'ready' || positioned.current || total === 0) return
+    positioned.current = true
+    const first = files.findIndex((f) => !viewedApi.isViewed(f.filename))
+    if (first > 0) setActive(first)
+  }, [status, files, total, viewedApi])
 
   // Arrow-key fallback for navigation.
   useEffect(() => {
