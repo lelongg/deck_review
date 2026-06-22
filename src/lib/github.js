@@ -22,7 +22,11 @@ async function toError(res) {
     detail = body.message || ''
     if (body.errors?.length) {
       const sub = body.errors
-        .map((e) => e.message || `${e.field || ''} ${e.code || ''}`.trim())
+        .map((e) =>
+          typeof e === 'string'
+            ? e
+            : e.message || `${e.field || ''} ${e.code || ''}`.trim(),
+        )
         .filter(Boolean)
         .join('; ')
       if (sub) detail = detail ? `${detail} — ${sub}` : sub
