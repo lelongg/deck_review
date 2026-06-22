@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   fetchReviewThreads,
   createCommentReply,
@@ -34,17 +34,39 @@ function buildThreads(rawThreads) {
 export function usePullComments(token, ref) {
   const [threads, setThreads] = useState([])
 
+  // Signature of the last applied thread set, so polling only re-renders when
+  // something actually changed (comments, replies, resolved state).
+  const sigRef = useRef('')
   const refresh = useCallback(async () => {
     try {
-      const raw = await fetchReviewThreads(token, ref)
-      setThreads(buildThreads(raw))
+      const built = buildThreads(await fetchReviewThreads(token, ref))
+      const sig = built
+        .map(
+          (t) =>
+            `${t.threadId}:${t.isResolved}:${t.comments.map((c) => c.id).join(',')}`,
+        )
+        .join('|')
+      if (sig === sigRef.current) return
+      sigRef.current = sig
+      setThreads(built)
     } catch {
       /* leave existing threads in place on failure */
     }
   }, [token, ref])
 
+  // Initial load + keep threads fresh: poll on a light interval and on focus,
+  // so replies (and notes becoming threads) show up without reopening the PR.
   useEffect(() => {
     refresh()
+    const onVis = () => {
+      if (document.visibilityState === 'visible') refresh()
+    }
+    document.addEventListener('visibilitychange', onVis)
+    const id = setInterval(refresh, 45 * 1000)
+    return () => {
+      document.removeEventListener('visibilitychange', onVis)
+      clearInterval(id)
+    }
   }, [refresh])
 
   const reply = useCallback(
