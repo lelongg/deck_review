@@ -381,7 +381,6 @@ export default function ReviewDeck({ token, prRef, onExit }) {
       <TopBar
         meta={meta}
         prRef={prRef}
-        onExit={onExit}
         onMenu={() => setFileListOpen(true)}
         onFinish={() => setFinishOpen(true)}
         commentCount={commentsApi.comments.length}
@@ -441,6 +440,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
         <FileList
           files={files}
           prRef={prRef}
+          onExit={onExit}
           active={active}
           isViewed={viewedApi.isViewed}
           onSetDirViewed={setDirViewed}
@@ -475,7 +475,6 @@ export default function ReviewDeck({ token, prRef, onExit }) {
 function TopBar({
   meta,
   prRef,
-  onExit,
   onMenu,
   onFinish,
   commentCount,
@@ -489,14 +488,6 @@ function TopBar({
 }) {
   return (
     <header className="topbar">
-      <button
-        className="topbar__exit"
-        onClick={onExit}
-        title="Leave this PR"
-        aria-label="leave this PR"
-      >
-        ←
-      </button>
       <button className="topbar__menu" onClick={onMenu} aria-label="file list">
         ☰
       </button>

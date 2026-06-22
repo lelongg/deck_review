@@ -7,6 +7,7 @@ import { getJSON, setJSON } from '../lib/storage.js'
 export default function FileList({
   files,
   prRef,
+  onExit,
   active,
   isViewed,
   onSetDirViewed,
@@ -53,6 +54,9 @@ export default function FileList({
         <div className="filelist__items">
           <TreeLevel node={tree} basePath="" depth={0} {...shared} />
         </div>
+        <button className="filelist__leave" onClick={onExit}>
+          ← leave this PR
+        </button>
       </aside>
     </div>
   )

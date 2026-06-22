@@ -60,6 +60,58 @@ export async function fetchViewer(token) {
   }
 }
 
+// GET /user/repos — repos the token can reach, most-recently-pushed first.
+// Paginated; we cap at a few pages so the picker loads quickly.
+export async function fetchUserRepos(token) {
+  const out = []
+  for (let page = 1; page <= 5; page++) {
+    const res = await fetch(
+      `${API}/user/repos?per_page=100&page=${page}&sort=pushed&affiliation=owner,collaborator,organization_member`,
+      { headers: restHeaders(token) },
+    )
+    if (!res.ok) throw await toError(res)
+    const batch = await res.json()
+    for (const r of batch) {
+      out.push({
+        owner: r.owner?.login,
+        repo: r.name,
+        fullName: r.full_name,
+        private: r.private,
+        pushedAt: r.pushed_at,
+        openIssues: r.open_issues_count,
+      })
+    }
+    if (batch.length < 100) break
+  }
+  return out
+}
+
+// GET /repos/{owner}/{repo}/pulls?state=open — open PRs for the picker.
+export async function fetchOpenPulls(token, { owner, repo }) {
+  const out = []
+  for (let page = 1; page <= 3; page++) {
+    const res = await fetch(
+      `${API}/repos/${owner}/${repo}/pulls?state=open&per_page=100&page=${page}&sort=updated&direction=desc`,
+      { headers: restHeaders(token) },
+    )
+    if (!res.ok) throw await toError(res)
+    const batch = await res.json()
+    for (const p of batch) {
+      out.push({
+        number: p.number,
+        title: p.title,
+        author: p.user?.login,
+        draft: p.draft,
+        updatedAt: p.updated_at,
+        baseRef: p.base?.ref,
+        headRef: p.head?.ref,
+      })
+    }
+    if (batch.length < 100) break
+  }
+  return out
+}
+
 // GET /repos/{owner}/{repo}/pulls/{n} — we need title + head.sha.
 export async function fetchPullRequest(token, { owner, repo, number }) {
   const res = await fetch(`${API}/repos/${owner}/${repo}/pulls/${number}`, {

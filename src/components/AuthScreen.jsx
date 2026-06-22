@@ -2,9 +2,10 @@ import { useState } from 'react'
 import { parsePrRef } from '../lib/prUrl.js'
 import { setItem, removeItem, storageAvailable } from '../lib/storage.js'
 import { TOKEN_KEY } from '../lib/constants.js'
+import PrPicker from './PrPicker.jsx'
 
-// Entry screen: paste a fine-grained PAT and a PR URL. Optionally remember the
-// token in localStorage (with a trust warning).
+// Entry screen: paste a fine-grained PAT, then either browse repos/PRs or paste
+// a PR URL. Optionally remember the token in localStorage (with a trust warning).
 export default function AuthScreen({ onStart, savedToken, savedRef }) {
   const [token, setToken] = useState(savedToken || '')
   const [url, setUrl] = useState(
@@ -14,26 +15,40 @@ export default function AuthScreen({ onStart, savedToken, savedRef }) {
   )
   const [remember, setRemember] = useState(!!savedToken)
   const [error, setError] = useState('')
+  const [pickerOpen, setPickerOpen] = useState(false)
+
+  // Validate + persist the token; returns it trimmed, or '' (and sets an error).
+  function commitToken() {
+    const trimmed = token.trim()
+    if (!trimmed) {
+      setError('A personal access token is required.')
+      return ''
+    }
+    if (remember) setItem(TOKEN_KEY, trimmed)
+    else removeItem(TOKEN_KEY)
+    return trimmed
+  }
 
   function submit(e) {
     e.preventDefault()
     setError('')
 
-    const trimmed = token.trim()
-    if (!trimmed) {
-      setError('A personal access token is required.')
-      return
-    }
+    const trimmed = commitToken()
+    if (!trimmed) return
+
     const ref = parsePrRef(url)
     if (!ref) {
       setError('Could not read a PR from that URL. Try github.com/owner/repo/pull/123')
       return
     }
-
-    if (remember) setItem(TOKEN_KEY, trimmed)
-    else removeItem(TOKEN_KEY)
-
     onStart(trimmed, ref)
+  }
+
+  function openPicker() {
+    setError('')
+    const trimmed = commitToken()
+    if (!trimmed) return
+    setPickerOpen(true)
   }
 
   return (
@@ -63,6 +78,18 @@ export default function AuthScreen({ onStart, savedToken, savedRef }) {
               fine-grained PAT · scope <em>Pull requests: read &amp; write</em>
             </span>
           </label>
+
+          <button
+            type="button"
+            className="btn btn--primary btn--block"
+            onClick={openPicker}
+          >
+            browse repos &amp; PRs →
+          </button>
+
+          <div className="auth__or">
+            <span>or paste a URL</span>
+          </div>
 
           <label className="field">
             <span className="field__label">pull request url</span>
@@ -98,10 +125,18 @@ export default function AuthScreen({ onStart, savedToken, savedRef }) {
 
           {error && <p className="auth__error">{error}</p>}
 
-          <button className="btn btn--primary" type="submit">
+          <button className="btn" type="submit">
             open deck
           </button>
         </form>
+
+        {pickerOpen && (
+          <PrPicker
+            token={token.trim()}
+            onPick={(ref) => onStart(token.trim(), ref)}
+            onClose={() => setPickerOpen(false)}
+          />
+        )}
 
         <footer className="auth__foot">
           <p>
