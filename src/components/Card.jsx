@@ -110,14 +110,15 @@ export default function Card({
     const body = bodyRef.current
     if (!body) return
     const tops = changeBlockTops()
+    if (tops.length === 0) return
     const cur = body.scrollTop
-    const target =
-      dir > 0
-        ? tops.find((t) => t > cur + 4)
-        : [...tops].reverse().find((t) => t < cur - 4)
-    if (target != null) {
-      body.scrollTo({ top: Math.max(0, target - 8), behavior: 'smooth' })
-    }
+    // Index of the change block currently at/above the viewport top (-1 if the
+    // scroll is above the first block), then step to the previous/next one.
+    let current = -1
+    for (let i = 0; i < tops.length; i++) if (tops[i] <= cur + 16) current = i
+    const targetIndex = dir > 0 ? current + 1 : current - 1
+    if (targetIndex < 0 || targetIndex >= tops.length) return
+    body.scrollTo({ top: Math.max(0, tops[targetIndex] - 8), behavior: 'smooth' })
   }
 
   // On arrival (and once the full diff loads), jump to the first change.
@@ -216,12 +217,6 @@ export default function Card({
       </div>
 
       <footer className="card__foot">
-        <button
-          className={`btn btn--mark ${viewed ? 'btn--marked' : ''}`}
-          onClick={viewed ? onToggleViewed : onMarkViewed}
-        >
-          {viewed ? 'viewed ✓ — unmark' : 'mark viewed'}
-        </button>
         {showDiff && segments.length > 0 && (
           <>
             <button
@@ -242,6 +237,12 @@ export default function Card({
             </button>
           </>
         )}
+        <button
+          className={`btn btn--mark ${viewed ? 'btn--marked' : ''}`}
+          onClick={viewed ? onToggleViewed : onMarkViewed}
+        >
+          {viewed ? 'viewed ✓ — unmark' : 'mark viewed'}
+        </button>
       </footer>
     </article>
   )
