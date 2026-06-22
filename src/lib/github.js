@@ -39,6 +39,27 @@ async function toError(res) {
   return err
 }
 
+// GET /user — the authenticated user's login. Cached per token: the viewer
+// doesn't change within a session, and we compare it against the PR author to
+// hide verdicts GitHub would reject (you can't approve your own PR).
+const viewerCache = new Map()
+export async function fetchViewer(token) {
+  if (viewerCache.has(token)) return viewerCache.get(token)
+  const p = (async () => {
+    const res = await fetch(`${API}/user`, { headers: restHeaders(token) })
+    if (!res.ok) throw await toError(res)
+    const u = await res.json()
+    return u.login
+  })()
+  viewerCache.set(token, p)
+  try {
+    return await p
+  } catch (err) {
+    viewerCache.delete(token)
+    throw err
+  }
+}
+
 // GET /repos/{owner}/{repo}/pulls/{n} — we need title + head.sha.
 export async function fetchPullRequest(token, { owner, repo, number }) {
   const res = await fetch(`${API}/repos/${owner}/${repo}/pulls/${number}`, {

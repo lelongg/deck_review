@@ -18,12 +18,16 @@ export default function FinishSheet({
   token,
   prRef,
   meta,
+  isAuthor = false,
   comments,
   onClose,
   onExit,
 }) {
   const [summary, setSummary] = useState('')
   const [event, setEvent] = useState('COMMENT')
+  // GitHub rejects approve / request-changes on your own PR, so the author can
+  // only leave a comment verdict.
+  const blocked = (id) => isAuthor && id !== 'COMMENT'
   const [phase, setPhase] = useState('compose') // compose | sending | done | error
   const [error, setError] = useState('')
 
@@ -101,10 +105,18 @@ export default function FinishSheet({
                   className={`verdict ${
                     event === ev.id ? 'verdict--on' : ''
                   } verdict--${ev.id.toLowerCase()}`}
+                  disabled={blocked(ev.id)}
+                  title={
+                    blocked(ev.id)
+                      ? 'GitHub doesn’t allow this on your own PR'
+                      : undefined
+                  }
                   onClick={() => setEvent(ev.id)}
                 >
                   <span className="verdict__label">{ev.label}</span>
-                  <span className="verdict__hint">{ev.hint}</span>
+                  <span className="verdict__hint">
+                    {blocked(ev.id) ? 'unavailable on your own PR' : ev.hint}
+                  </span>
                 </button>
               ))}
             </div>

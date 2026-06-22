@@ -250,6 +250,7 @@ em {
   border-bottom: 1px solid var(--line-soft);
   background: var(--bg);
 }
+.topbar__exit,
 .topbar__menu {
   background: none;
   border: none;
@@ -257,6 +258,9 @@ em {
   font-size: 18px;
   padding: 4px 6px;
   flex: none;
+}
+.topbar__exit {
+  font-size: 20px;
 }
 .topbar__wrap,
 .topbar__view,
@@ -1144,6 +1148,10 @@ em {
   border-radius: 9px;
   padding: 11px 13px;
   color: var(--ink);
+}
+.verdict:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 .verdict__label {
   font-size: 13px;

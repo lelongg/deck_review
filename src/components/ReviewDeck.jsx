@@ -3,6 +3,7 @@ import {
   fetchPullRequest,
   fetchPullRequestFiles,
   fetchPullRequestDiff,
+  fetchViewer,
   createReviewComment,
   deleteReviewComment,
 } from '../lib/github.js'
@@ -31,6 +32,19 @@ export default function ReviewDeck({ token, prRef, onExit }) {
 
   const [fileListOpen, setFileListOpen] = useState(false)
   const [finishOpen, setFinishOpen] = useState(false)
+
+  // The authenticated user's login, so the finish sheet can hide verdicts
+  // GitHub rejects (you can't approve / request changes on your own PR).
+  const [viewer, setViewer] = useState(null)
+  useEffect(() => {
+    let alive = true
+    fetchViewer(token)
+      .then((login) => alive && setViewer(login))
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [token])
 
   // Soft-wrap long diff lines (default) vs. no-wrap + horizontal scroll.
   // Persisted as a global preference, not per-PR.
@@ -367,6 +381,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
       <TopBar
         meta={meta}
         prRef={prRef}
+        onExit={onExit}
         onMenu={() => setFileListOpen(true)}
         onFinish={() => setFinishOpen(true)}
         commentCount={commentsApi.comments.length}
@@ -443,6 +458,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
           token={token}
           prRef={prRef}
           meta={meta}
+          isAuthor={!!viewer && !!meta?.author && viewer === meta.author}
           comments={commentsApi.comments}
           onClose={() => setFinishOpen(false)}
           onExit={onExit}
@@ -459,6 +475,7 @@ export default function ReviewDeck({ token, prRef, onExit }) {
 function TopBar({
   meta,
   prRef,
+  onExit,
   onMenu,
   onFinish,
   commentCount,
@@ -472,6 +489,14 @@ function TopBar({
 }) {
   return (
     <header className="topbar">
+      <button
+        className="topbar__exit"
+        onClick={onExit}
+        title="Leave this PR"
+        aria-label="leave this PR"
+      >
+        ←
+      </button>
       <button className="topbar__menu" onClick={onMenu} aria-label="file list">
         ☰
       </button>
